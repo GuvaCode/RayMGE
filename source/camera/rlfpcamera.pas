@@ -1,3 +1,17 @@
+{
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃   raylibExtras * Utilities and Shared Components for Raylib                  ┃
+┃                                                                              ┃
+┃    rlFPCamera * First person camera                                          ┃
+┃                                                                              ┃
+┃   Original source code in C                                                  ┃
+┃   https://github.com/raylib-extras/extras-c/blob/main/cameras                ┃
+┃   Copyright (c) 2021 Jeffery Myers                                           ┃
+┃                                                                              ┃
+┃   Pacal translation (c) 2021 Gunko Vadim                                     ┃
+┃   https://github.com/GuvaCode                                                ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+}
 unit rlFPCamera;
 
 
@@ -6,7 +20,7 @@ unit rlFPCamera;
 interface
 
 uses
-  ray_header, ray_rlgl, ray_math, math;
+  raylib, rlgl, raymath, math;
 
 type
   PrlFPCameraControls = ^TrlFPCameraControls;

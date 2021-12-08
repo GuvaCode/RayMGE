@@ -6,12 +6,12 @@
     <CompilerOptions>
       <Version Value="11"/>
       <SearchPaths>
-        <OtherUnitFiles Value="../source;../source/system"/>
+        <OtherUnitFiles Value="../source;../source/system;../source/camera"/>
         <UnitOutputDirectory Value="../lib/$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
     </CompilerOptions>
     <Version Major="1" Release="1"/>
-    <Files Count="3">
+    <Files Count="6">
       <Item1>
         <Filename Value="rlMge_desc.pas"/>
         <HasRegisterProc Value="True"/>
@@ -23,8 +23,20 @@
       </Item2>
       <Item3>
         <Filename Value="../source/system/rltimers.pas"/>
-        <UnitName Value="rltimers"/>
+        <UnitName Value="rlTimers"/>
       </Item3>
+      <Item4>
+        <Filename Value="../source/rlengine.pas"/>
+        <UnitName Value="rlEngine"/>
+      </Item4>
+      <Item5>
+        <Filename Value="../source/camera/rlfpcamera.pas"/>
+        <UnitName Value="rlFPCamera"/>
+      </Item5>
+      <Item6>
+        <Filename Value="../source/camera/rltpcamera.pas"/>
+        <UnitName Value="rlTPCamera"/>
+      </Item6>
     </Files>
     <CompatibilityMode Value="True"/>
     <RequiredPkgs Count="3">
