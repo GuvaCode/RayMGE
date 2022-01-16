@@ -5,7 +5,7 @@ unit rlEngine;
 interface
 
 uses
-  raylib, raymath, rlgl, rlFPCamera, rlTPCamera, classes, ray_math2d, SysUtils;
+  raylib, raymath, rlgl, rlFPCamera, rlTPCamera, classes;
 
 type
   TrlEngineDrawMode = (dmNormal, dmEx, dmWires, dmWiresEx);
