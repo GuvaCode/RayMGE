@@ -9,7 +9,7 @@ interface
 
 uses
   rlMge_desc, rlApplication, rlTimers, rlEngine, rlFPCamera, rlTPCamera, 
-  LazarusPackageIntf;
+  rlights, rlShadersPack, LazarusPackageIntf;
 
 implementation
 

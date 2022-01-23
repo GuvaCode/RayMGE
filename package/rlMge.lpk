@@ -6,12 +6,12 @@
     <CompilerOptions>
       <Version Value="11"/>
       <SearchPaths>
-        <OtherUnitFiles Value="../source;../source/system;../source/camera"/>
+        <OtherUnitFiles Value="../source;../source/system;../source/camera;../source/extra;../source/shader"/>
         <UnitOutputDirectory Value="../lib/$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
     </CompilerOptions>
     <Version Major="1" Release="1"/>
-    <Files Count="6">
+    <Files Count="8">
       <Item1>
         <Filename Value="rlMge_desc.pas"/>
         <HasRegisterProc Value="True"/>
@@ -37,6 +37,14 @@
         <Filename Value="../source/camera/rltpcamera.pas"/>
         <UnitName Value="rlTPCamera"/>
       </Item6>
+      <Item7>
+        <Filename Value="../source/extra/rlights.pas"/>
+        <UnitName Value="rlights"/>
+      </Item7>
+      <Item8>
+        <Filename Value="../source/shader/rlShadersPack.pas"/>
+        <UnitName Value="rlShadersPack"/>
+      </Item8>
     </Files>
     <CompatibilityMode Value="True"/>
     <RequiredPkgs Count="3">

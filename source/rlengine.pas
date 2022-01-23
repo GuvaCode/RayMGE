@@ -20,32 +20,38 @@ type
   TrlEngineCameraMode = (cmFirstPerson, cmThirdPerson);
   TrlModelCollisionMode = (cmBBox,cmSphere);
 
-
   { TrlEngine }
   TrlEngine = class
     private
       FDebug: boolean;
+      FDrawDistance: single;
       FDrawsGrid: boolean;
-
       FEngineCameraMode: TrlEngineCameraMode;
       FGridSlices: longint;
       FGridSpacing: single;
       FShowSkyBox: boolean;
       FUseMouse: boolean;
       FSkyBox: TModel;
+      FUsesDrawDistance: boolean;
+      FCollisionDrawDistance: TVector3;
 
       procedure SetDebug(AValue: boolean);
+      procedure SetDrawDistance(AValue: single);
       procedure SetDrawsGrid(AValue: boolean);
       procedure SetEngineCameraMode(AValue: TrlEngineCameraMode);
       procedure SetGridSlices(AValue: longint);
       procedure SetGridSpacing(AValue: single);
       procedure SetShowSkyBox(AValue: boolean);
       procedure SetUseMouse(AValue: boolean);
+      procedure SetUsesDrawDistance(AValue: boolean);
     protected
       FList: TList;
       FDeadList: TList;
       procedure CreateSkyBox;
+      procedure DoMoveUpdate; virtual;
+      procedure DoMoveEndUpdate; virtual;
     public
+
       CameraThirdPerson:TrlTPCamera;
       CameraFirstPerson:TrlFPCamera;
 
@@ -59,11 +65,14 @@ type
 
       property EngineCameraMode: TrlEngineCameraMode read FEngineCameraMode write SetEngineCameraMode;
       property DrawsGrid: boolean read FDrawsGrid write SetDrawsGrid;
+      property DrawDistance: single read FDrawDistance write SetDrawDistance;
+      property UsesDrawDistance: boolean read FUsesDrawDistance write SetUsesDrawDistance;
       property GridSlices:longint read FGridSlices write SetGridSlices;
       property GridSpacing: single read FGridSpacing write SetGridSpacing;
       property Debug: boolean read FDebug write SetDebug;
       property UseMouse: boolean read FUseMouse write SetUseMouse;
       property ShowSkyBox: boolean read FShowSkyBox write SetShowSkyBox;
+
   end;
 
   { TrlModel }
@@ -111,6 +120,7 @@ type
       constructor Create(Engine: TrlEngine); virtual;
       destructor Destroy; override;
       procedure Move(const MoveCount: Single); overload; virtual;
+
       procedure LoadingModel(FileName: String);
       procedure LoadingModelTexture(FileName: String);
 
@@ -180,14 +190,20 @@ procedure TrlEngine.SetUseMouse(AValue: boolean);
 begin
   if FUseMouse=AValue then Exit;
   FUseMouse:=AValue;
+end;
 
+procedure TrlEngine.SetUsesDrawDistance(AValue: boolean);
+begin
+  if FUsesDrawDistance=AValue then Exit;
+  FUsesDrawDistance:=AValue;
 end;
 
 procedure TrlEngine.CreateSkyBox;
-{$I skybox.inc}
+{$I shader/skybox.inc}
 var Cube:TMesh;
     mMap:Integer;
 begin
+  // Create SkyBox
   Cube:=GenMeshCube(1.0,1.0,1.0);
   FSkyBox:=LoadModelFromMesh(cube);
   FSkybox.materials[0].shader := LoadShaderFromMemory(vs,fs);
@@ -196,6 +212,15 @@ begin
   'environmentMap'), @mMap , SHADER_UNIFORM_INT);
 end;
 
+procedure TrlEngine.DoMoveUpdate;
+begin
+//
+end;
+
+procedure TrlEngine.DoMoveEndUpdate;
+begin
+//
+end;
 
 procedure TrlEngine.SetDrawsGrid(AValue: boolean);
 begin
@@ -207,6 +232,12 @@ procedure TrlEngine.SetDebug(AValue: boolean);
 begin
   if FDebug=AValue then Exit;
   FDebug:=AValue;
+end;
+
+procedure TrlEngine.SetDrawDistance(AValue: single);
+begin
+  if FDrawDistance=AValue then Exit;
+  FDrawDistance:=AValue;
 end;
 
 constructor TrlEngine.Create;
@@ -232,9 +263,10 @@ begin
   FDebug:=False;
   FGridSpacing:=2;
   FGridSlices:=10;
+  FDrawDistance:=100;
+  FUsesDrawDistance:=true;
 
   CreateSkyBox;
-
 end;
 
 destructor TrlEngine.Destroy;
@@ -255,20 +287,26 @@ begin
        begin
          rlFPCameraUpdate(@CameraFirstPerson);
          rlFPCameraUseMouse(@CameraFirstPerson,FUseMouse);
+         FCollisionDrawDistance:=CameraFirstPerson.CameraPosition;
        end;
+
      cmThirdPerson:
        begin
          rlTPCameraUpdate(@CameraThirdPerson);
          rlTPCameraUseMouse(@CameraThirdPerson,FUseMouse,1);
+         FCollisionDrawDistance:=CameraThirdPerson.CameraPosition;
        end;
    end;
 
-
+ DoMoveUpdate;
 for i := 0 to FList.Count - 1 do
   begin
     //TrlModel(List.Items[i]).Update3dModelAnimations(MoveCount);
     TrlModel(FList.Items[i]).Move(MoveCount);
   end;
+
+ DoMoveEndUpdate;
+
 end;
 
 procedure TrlEngine.Draw;
@@ -283,25 +321,28 @@ begin
 
   if ShowSkyBox then // Draw Skybox
     begin
-      rlDisableBackfaceCulling();
-      rlDisableDepthMask();
-      DrawModel(FSkybox, Vector3Create(0, 0, 0), 1.0, white);
-      rlEnableBackfaceCulling();
-      rlEnableDepthMask();
+     rlDisableBackfaceCulling();
+     rlDisableDepthMask();
+     DrawModel(FSkybox, Vector3Create(0, 0, 0), 1.0, white);
+     rlEnableBackfaceCulling();
+     rlEnableDepthMask();
     end;
-
 
   for i := 0 to FList.Count - 1 do
     begin
-      TrlModel(FList.Items[i]).Draw;
-      if FDebug then
+     if FUsesDrawDistance then
+       begin
+        if Vector3Distance(FCollisionDrawDistance, TrlModel(FList.Items[i]).Position) <= self.FDrawDistance
+        then TrlModel(FList.Items[i]).Draw;
+       end;
+
+     if FDebug then
         begin // Draw debug collisions (Sphere or Bounding Box)
           if TrlModel(FList.Items[i]).CollisionMode = cmSphere then
           DrawSphereWires(TrlModel(FList.Items[i]).FCollisionSphere,TrlModel(FList.Items[i]).CollisionRadius,10,10,GREEN);
           if TrlModel(FList.Items[i]).CollisionMode = cmBBox then
           DrawBoundingBox(TrlModel(FList.Items[i]).FCollisionBBox,BLUE);
         end;
-
     end;
 
   if FDrawsGrid then DrawGrid(FGridSlices, FGridSpacing);
@@ -433,6 +474,8 @@ begin
   Collisioned:=false;
   FCollisionAutoSize:=true;
   DrawMode:=dmEx;
+
+
 end;
 
 destructor TrlModel.Destroy;
