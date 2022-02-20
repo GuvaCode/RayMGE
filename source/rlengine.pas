@@ -71,10 +71,8 @@ type
       procedure Update; overload; virtual;
       procedure Render; virtual;
       procedure Dead;
-
       procedure LoadModel(FileName: String); virtual;
       procedure LoadModelTexture(TextureFileName:String; MaterialMap: TMaterialMapIndex);
-
       property DrawMode: TrlEngineDrawMode read FDrawMode write SetDrawMode;
       property Model: TModel read FModel write FModel;
       property Axis: TVector3 read FAxis write SetAxis;
@@ -134,7 +132,7 @@ type
     property Direction: TVector3 read FDirection write SetDirection;
   end;
 
-  { TJumperSprite }
+  { TrlJumperModel }
   TrlJumperModel = class(TrlPlayerModel)
   private
     FJumpCount: Integer;
@@ -244,25 +242,22 @@ begin
       end;
     jsJumping:
       begin
-
         Fposition.y := Fposition.y + FVelocity.y * GetFrameTime;
         FVelocity.y := FVelocity.y + FJumpSpeed;
         if FVelocity.Y > 0 then
-          FJumpState := jsFalling;
+           FJumpState := jsFalling;
       end;
     jsFalling:
       begin
         Fposition.Y := Fposition.Y + FVelocity.Y * GetFrameTime;
         FVelocity.Y := FVelocity.Y - FJumpSpeed;
         if FVelocity.Y > FMaxFallSpeed then
-          FVelocity.Y := FMaxFallSpeed;
-
+           FVelocity.Y := FMaxFallSpeed;
         if FPosition.Y < 0 then
         begin
           FJumpState := jsNone;
           FVelocity.Y:=0;
         end;
-
       end;
   end;
   DoJump := False;
@@ -293,7 +288,6 @@ if FSpeed <> FMinSpeed then
 end;
 
 { TrlPlayerModel }
-
 procedure TrlPlayerModel.SetSpeed(AValue: Single);
 begin
   if FSpeed > FMaxSpeed then FSpeed := FMaxSpeed
@@ -312,7 +306,6 @@ begin
   FVelocity.z := m_Sin(Trunc(FDirection.z)) * Speed;
   FVelocity.y := m_Sin(Trunc(FDirection.y)) * Speed;
 end;
-
 
 constructor TrlPlayerModel.Create(Engine: TrlEngine);
 begin
@@ -527,13 +520,11 @@ constructor TrlEngine.Create;
 begin
   FList := TList.Create;
   FDeadList := TList.Create;
-
   EngineCamera.position:=Vector3Create(10,10,10);    // Camera position
   EngineCamera.target:=Vector3Create(0.0,0.0,0.0);   // Camera looking at point
   EngineCamera.up:=Vector3Create(0.0,1.0,0.0);       // Camera up vector (rotation towards target)
   EngineCamera.fovy:=45.0;                           // Camera field-of-view Y
   EngineCamera.projection:=CAMERA_PERSPECTIVE;       // Camera mode type
-
   DrawDistance:=0.0;
   SetEngineCameraMode(CAMERA_ORBITAL); // set camera mode CAMERA_CUSTOM or CAMERA_FREE and etc..
   SetDebugGrid(10,1); // set size debug grid
