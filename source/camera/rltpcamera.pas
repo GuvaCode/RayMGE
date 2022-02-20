@@ -166,8 +166,11 @@ end;
 function rlFPCameraGetViewRay(camera: PrlTPCamera): TRay;
 var rRay:TRay;
 begin
+//  rRay.position:=camera^.CameraPosition;
+//  rRay.direction:=Vector3Subtract(camera^.ViewCamera.target, camera^.ViewCamera.position);
+//  result:=rRay;
   rRay.position:=camera^.CameraPosition;
-  rRay.direction:=Vector3Subtract(camera^.ViewCamera.target, camera^.ViewCamera.position);
+  rRay.direction:=camera^.ViewForward;
   result:=rRay;
 end;
 

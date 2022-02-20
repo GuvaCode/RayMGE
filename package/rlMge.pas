@@ -8,8 +8,8 @@ unit rlMge;
 interface
 
 uses
-  rlMge_desc, rlApplication, rlTimers, rlEngine, rlFPCamera, rlTPCamera, 
-  rlights, rlShadersPack, LazarusPackageIntf;
+  rlMge_desc, rlApplication, rlTimers, rlights, rlShapesEx, rlengine, 
+  LazarusPackageIntf;
 
 implementation
 

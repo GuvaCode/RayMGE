@@ -6,232 +6,402 @@
 ██║  ██║███████╗ ███████╗██║ ╚████║╚██████╔╝██║██║ ╚████║███████╗     ██║██╗╚██████╔╝
 ╚═╝  ╚═╝╚══════╝ ╚══════╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝╚══════╝     ╚═╝╚═╝ ╚═════╝
 *)
-unit rlEngine;
+unit rlengine;
 
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-  raylib, raymath, rlgl, rlFPCamera, rlTPCamera, classes;
+  raylib, raymath, rlgl, classes,sysutils;
 
 type
-  TrlEngineDrawMode = (dmNormal, dmEx, dmWires, dmWiresEx);
-  TrlEngineCameraMode = (cmFirstPerson, cmThirdPerson);
-  TrlModelCollisionMode = (cmBBox,cmSphere);
+  TrlEngineDrawMode = (dmNormal, dmEx, dmWires, dmWiresEx); // draw model mode
 
   { TrlEngine }
   TrlEngine = class
     private
-      FDebug: boolean;
+      FDrawDebugGrid: boolean;
       FDrawDistance: single;
-      FDrawsGrid: boolean;
-      FEngineCameraMode: TrlEngineCameraMode;
-      FGridSlices: longint;
-      FGridSpacing: single;
-      FShowSkyBox: boolean;
-      FUseMouse: boolean;
-      FSkyBox: TModel;
-      FUsesDrawDistance: boolean;
-      FCollisionDrawDistance: TVector3;
-
-      procedure SetDebug(AValue: boolean);
+      FGridSlice: longint;
+      FGridSpace: single;
+      FEngineCameraMode: TCameraMode;
+      procedure SetDrawDebugGrid(AValue: boolean);
       procedure SetDrawDistance(AValue: single);
-      procedure SetDrawsGrid(AValue: boolean);
-      procedure SetEngineCameraMode(AValue: TrlEngineCameraMode);
-      procedure SetGridSlices(AValue: longint);
-      procedure SetGridSpacing(AValue: single);
-      procedure SetShowSkyBox(AValue: boolean);
-      procedure SetUseMouse(AValue: boolean);
-      procedure SetUsesDrawDistance(AValue: boolean);
+      procedure SetEngineCameraMode(AValue: TCameraMode);
     protected
-      FList: TList;
-      FDeadList: TList;
-      procedure CreateSkyBox;
-      procedure DoMoveUpdate; virtual;
-      procedure DoMoveEndUpdate; virtual;
+      FList: TList; // list of model
+      FDeadList: TList; // model dead list
     public
-
-      CameraThirdPerson:TrlTPCamera;
-      CameraFirstPerson:TrlFPCamera;
-
+      EngineCamera: TCamera3D;
       constructor Create;
       destructor Destroy; override;
 
-      procedure Move(MoveCount: single);
-      procedure Draw; virtual;
-      procedure ClearDeadModel;
-      procedure LoadSkyBoxFile(FileName:string);
-
-      property EngineCameraMode: TrlEngineCameraMode read FEngineCameraMode write SetEngineCameraMode;
-      property DrawsGrid: boolean read FDrawsGrid write SetDrawsGrid;
+      procedure Update;  // update engine
+      procedure Render; virtual; // render engine
+      procedure ClearDeadModel;  // clear of death model
+      procedure SetDebugGrid(slices:longint; spacing:single); // set grid size and slice
+    published
+      property EngineCameraMode: TCameraMode read FEngineCameraMode write SetEngineCameraMode;
+      property DrawDebugGrid: boolean read FDrawDebugGrid write SetDrawDebugGrid;
       property DrawDistance: single read FDrawDistance write SetDrawDistance;
-      property UsesDrawDistance: boolean read FUsesDrawDistance write SetUsesDrawDistance;
-      property GridSlices:longint read FGridSlices write SetGridSlices;
-      property GridSpacing: single read FGridSpacing write SetGridSpacing;
-      property Debug: boolean read FDebug write SetDebug;
-      property UseMouse: boolean read FUseMouse write SetUseMouse;
-      property ShowSkyBox: boolean read FShowSkyBox write SetShowSkyBox;
-
   end;
 
   { TrlModel }
   TrlModel = class
     private
-      FAngle: Single;
       FAxis: TVector3;
-      FAxisX: Single;
-      FAxisY: Single;
-      FAxisZ: Single;
-      FCollisionAutoSize: boolean;
-      FCollisioned: Boolean;
-      FCollisionMode: TrlModelCollisionMode;
-      FCollisionRadius: single;
-      FColor: TColor;
       FDrawMode: TrlEngineDrawMode;
       FPosition: TVector3;
-      FPositionX: single;
-      FPositionY: single;
-      FPositionZ: single;
+      FRotationAngle: single;
       FScale: Single;
-      FScaleEx: TVector3;
-      function GetPositionX: single;
-      function GetPositionY: single;
-      function GetPositionZ: single;
-      procedure SetCollisionAutoSize(AValue: boolean);
-      procedure SetCollisionMode(AValue: TrlModelCollisionMode);
-      procedure SetCollisionRadius(AValue: single);
+      procedure SetAxis(AValue: TVector3);
       procedure SetDrawMode(AValue: TrlEngineDrawMode);
       procedure SetPosition(AValue: TVector3);
-      procedure SetPositionX(AValue: single);
-      procedure SetPositionY(AValue: single);
-      procedure SetPositionZ(AValue: single);
+      procedure SetRotationAngle(AValue: single);
       procedure SetScale(AValue: Single);
-
     protected
       FModelDead: Boolean;
       FEngine: TrlEngine;
       FModel: TModel;
       FTexture: TTexture;
-      FCollisionBBox:TBoundingBox;
-      FCollisionSphere: TVector3;
-      procedure DoCollision(CollisonModel: TrlModel); virtual;
     public
       constructor Create(Engine: TrlEngine); virtual;
       destructor Destroy; override;
-      procedure Move(const MoveCount: Single); overload; virtual;
-
-      procedure LoadingModel(FileName: String);
-      procedure LoadingModelTexture(FileName: String);
-
+      procedure Update; overload; virtual;
+      procedure Render; virtual;
       procedure Dead;
-      procedure Draw;
 
-      procedure Collision(const Other: TrlModel); overload; virtual;
-      procedure Collision; overload; virtual;
+      procedure LoadModel(FileName: String); virtual;
+      procedure LoadModelTexture(TextureFileName:String; MaterialMap: TMaterialMapIndex);
 
       property DrawMode: TrlEngineDrawMode read FDrawMode write SetDrawMode;
       property Model: TModel read FModel write FModel;
-      property Color: TColor read FColor write FColor;
-      property Scale: Single read FScale write SetScale;
-
-      property CollisionAutoSize: boolean read FCollisionAutoSize write SetCollisionAutoSize;
-      property CollisionRadius: single read FCollisionRadius write SetCollisionRadius;
-      property Collisioned: Boolean read FCollisioned write FCollisioned;
-      property CollisionSphere: TVector3 read FCollisionSphere write FCollisionSphere;
-
-      property CollisionMode: TrlModelCollisionMode read FCollisionMode write SetCollisionMode;
-
+      property Axis: TVector3 read FAxis write SetAxis;
       property Position: TVector3 read FPosition write SetPosition;
-      property PositionX: single read GetPositionX write SetPositionX;
-      property PositionY: single read GetPositionY write SetPositionY;
-      property PositionZ: single read GetPositionZ write SetPositionZ;
-
-      property X: Single read FPosition.X write FPosition.X;
-      property Y: Single read FPosition.Y write FPosition.Y;
-      property Z: Single read FPosition.Z write FPosition.Z;
-
-      property AxisX: Single read FAxisX write FAxisX;
-      property AxisY: Single read FAxisY write FAxisY;
-      property AxisZ: Single read FAxisZ write FAxisZ;
-      property Angle: Single read FAngle write FAngle;
+      property Scale: Single read FScale write SetScale;
+      property RotationAngle: single read FRotationAngle write SetRotationAngle;
     end;
 
-  const LE = #10; // line end;
+  { TrlAnimatedModel }
+  TrlAnimatedModel = class(TrlModel)
+  private
+    FAnimationIndex: longint;
+    FAnimationLoop: boolean;
+    FAnimationSpeed: Single;
+    FAnims: PModelAnimation;
+    FAnimFrameCounter: Single;
+    FAnimCont: integer;
+    procedure SetAnimationIndex(AValue: longint);
+    procedure SetAnimationLoop(AValue: boolean);
+    procedure SetAnimationSpeed(AValue: Single);
+  protected
+    procedure UpdateModelAnimation;
+  public
+    constructor Create(Engine: TrlEngine); override;
+    procedure Update; override;
+    procedure LoadModel(FileName: String); override;
+    property Anims: PModelAnimation read FAnims write FAnims;
+    property AnimationIndex: longint read FAnimationIndex write SetAnimationIndex;
+    property AnimationSpeed: Single read FAnimationSpeed write SetAnimationSpeed;
+    property AnimationLoop: boolean read FAnimationLoop write SetAnimationLoop;
+  end;
+
+  { TrlPlayerModel }
+
+  TrlPlayerModel = class(TrlAnimatedModel)
+  private
+    FAcc: Single;
+    FDcc: Single;
+    FDirection: TVector3;
+    FMaxSpeed: Single;
+    FMinSpeed: Single;
+    FSpeed: Single;
+    FVelocity: TVector3;
+    procedure SetDirection(AValue: TVector3);
+    procedure SetSpeed(AValue: Single);
+  public
+    constructor Create(Engine: TrlEngine); override;
+    procedure Update; override;
+    procedure Accelerate; virtual;
+    procedure Deccelerate; virtual;
+    property Speed: Single read FSpeed write SetSpeed;
+    property MinSpeed: Single read FMinSpeed write FMinSpeed;
+    property MaxSpeed: Single read FMaxSpeed write FMaxSpeed;
+    property Velocity: TVector3 read FVelocity write FVelocity;
+    property Acceleration: Single read FAcc write FAcc;
+    property Decceleration: Single read FDcc write FDcc;
+    property Direction: TVector3 read FDirection write SetDirection;
+  end;
+
+
+  function  m_Cos( Angle : Integer ) : Single;
+  function  m_Sin( Angle : Integer ) : Single;
+  procedure InitCosSinTables;
+
+var    cosTable : array[ 0..360 ] of Single;
+       sinTable : array[ 0..360 ] of Single;
 
 implementation
 
+function m_Cos(Angle: Integer): Single;
+begin
+   if Angle > 360 Then
+    DEC( Angle, ( Angle div 360 ) * 360 )
+  else
+    if Angle < 0 Then
+      INC( Angle, ( abs( Angle ) div 360 + 1 ) * 360 );
+  Result := cosTable[ Angle ];
+end;
+
+function m_Sin(Angle: Integer): Single;
+begin
+  if Angle > 360 Then
+    DEC( Angle, ( Angle div 360 ) * 360 )
+  else
+    if Angle < 0 Then
+      INC( Angle, ( abs( Angle ) div 360 + 1 ) * 360 );
+  Result := sinTable[ Angle ];
+end;
+
+procedure InitCosSinTables;
+var
+  i         : Integer;
+  rad_angle : Single;
+begin
+for i := 0 to 360 do
+  begin
+    rad_angle := i * ( pi / 180 );
+    cosTable[ i ] := cos( rad_angle );
+    sinTable[ i ] := sin( rad_angle );
+  end;
+
+end;
+
+{ TrlPlayerModel }
+
+procedure TrlPlayerModel.SetSpeed(AValue: Single);
+begin
+  if FSpeed > FMaxSpeed then FSpeed := FMaxSpeed
+  else
+  if FSpeed < FMinSpeed then  FSpeed := FMinSpeed;
+  FSpeed := AValue;
+  FVelocity.x := m_Cos(Trunc(FDirection.x)) * Speed;
+  FVelocity.z := m_Sin(Trunc(FDirection.z)) * Speed;
+  FVelocity.y := m_Sin(Trunc(FDirection.y)) * Speed;
+
+end;
+
+procedure TrlPlayerModel.SetDirection(AValue: TVector3);
+begin
+  FDirection := AValue;
+  FVelocity.x := m_Cos(Trunc(FDirection.x)) * Speed;
+  FVelocity.z := m_Sin(Trunc(FDirection.z)) * Speed;
+  FVelocity.y := m_Sin(Trunc(FDirection.y)) * Speed;
+end;
+
+
+constructor TrlPlayerModel.Create(Engine: TrlEngine);
+begin
+  inherited Create(Engine);
+  FVelocity:=Vector3Create(0,0,0);
+  Direction:=Vector3Create(0,0,0);
+  Acceleration:=0;
+  Decceleration:=0;
+  Speed:=0;
+  MinSpeed:=0;
+  MaxSpeed:=0;
+end;
+
+procedure TrlPlayerModel.Update;
+begin
+  FPosition.x := FPosition.x + FVelocity.x * GetFrameTime;
+  FPosition.z := FPosition.z + FVelocity.z * GetFrameTime;
+  FPosition.y := FPosition.y + FVelocity.y * GetFrameTime;
+  inherited Update;
+end;
+
+procedure TrlPlayerModel.Accelerate;
+begin
+   if FSpeed <> FMaxSpeed then
+  begin
+    FSpeed := FSpeed + FAcc;
+    if FSpeed > FMaxSpeed then
+       FSpeed := FMaxSpeed;
+    FVelocity.x := m_Cos(Trunc(FDirection.x)) * Speed ;
+    FVelocity.z := m_Sin(Trunc(FDirection.z)) * Speed ;
+    FVelocity.y := m_Sin(Trunc(FDirection.y)) * Speed;
+  end;
+end;
+
+procedure TrlPlayerModel.Deccelerate;
+begin
+   if FSpeed <> FMinSpeed then
+  begin
+    FSpeed := FSpeed - FDcc;
+    if FSpeed < FMinSpeed then
+       FSpeed := FMinSpeed;
+    FVelocity.x := m_Cos(Trunc(FDirection.x)) * Speed;
+    FVelocity.z := m_Sin(Trunc(FDirection.z)) * Speed;
+    FVelocity.y := m_Sin(Trunc(FDirection.y)) * Speed;
+  end;
+end;
+
+{ TrlAnimatedModel }
+procedure TrlAnimatedModel.SetAnimationIndex(AValue: longint);
+begin
+  FAnimFrameCounter:=0;
+  if FAnimationIndex=AValue then Exit;
+  FAnimationIndex:=AValue;
+end;
+
+procedure TrlAnimatedModel.SetAnimationLoop(AValue: boolean);
+begin
+  if FAnimationLoop=AValue then Exit;
+  FAnimationLoop:=AValue;
+end;
+
+procedure TrlAnimatedModel.SetAnimationSpeed(AValue: Single);
+begin
+  if FAnimationSpeed=AValue then Exit;
+  FAnimationSpeed:=AValue;
+end;
+
+constructor TrlAnimatedModel.Create(Engine: TrlEngine);
+begin
+  inherited Create(Engine);
+  AnimationLoop:=True;
+end;
+
+procedure TrlAnimatedModel.Update;
+begin
+  if Model.boneCount>0 then UpdateModelAnimation;
+  inherited Update;
+end;
+
+procedure TrlAnimatedModel.UpdateModelAnimation;
+begin
+  FAnimFrameCounter:= FAnimFrameCounter + FAnimationSpeed * GetFrameTime;
+  Raylib.UpdateModelAnimation(Fmodel, FAnims[FAnimationIndex], Round(FAnimFrameCounter));
+  if (FAnimFrameCounter >= FAnims[FAnimationIndex].frameCount) and (FAnimationLoop) then
+      FAnimFrameCounter:=0
+  else
+  if FAnimFrameCounter >= FAnims[FAnimationIndex].frameCount then
+     FAnimFrameCounter:=FAnims[FAnimationIndex].frameCount;
+end;
+
+procedure TrlAnimatedModel.LoadModel(FileName: String);
+begin
+  inherited LoadModel(FileName);
+  FAnimCont:=0;
+  FAnims:=LoadModelAnimations(PChar(FileName),@FAnimCont);
+  FAnimationIndex:=0;
+end;
+
+procedure TrlModel.SetPosition(AValue: TVector3);
+begin
+  FPosition:=AValue;
+end;
+
+procedure TrlModel.SetRotationAngle(AValue: single);
+begin
+  if FRotationAngle=AValue then Exit;
+  FRotationAngle:=AValue;
+end;
+
+procedure TrlModel.SetAxis(AValue: TVector3);
+begin
+  FAxis:=AValue;
+end;
+
+procedure TrlModel.SetDrawMode(AValue: TrlEngineDrawMode);
+begin
+  if FDrawMode=AValue then Exit;
+  FDrawMode:=AValue;
+end;
+
+procedure TrlModel.SetScale(AValue: Single);
+begin
+  if FScale=AValue then Exit;
+  FScale:=AValue;
+end;
+
+{ TrlModel }
+constructor TrlModel.Create(Engine: TrlEngine);
+begin
+  FEngine := Engine;
+  FEngine.FList.Add(Self);
+  DrawMode:=dmEx;
+  FModelDead:=False;
+  Position:=Vector3Create(0.0,0.0,0.0);
+  Axis:=Vector3Create(0.0,0.0,0.0);
+  Scale:=1.0;
+end;
+
+destructor TrlModel.Destroy;
+begin
+  UnloadTexture(Self.FTexture);
+  UnloadModel(Self.FModel);
+  inherited Destroy;
+end;
+
+procedure TrlModel.Update;
+var transform: TMatrix;
+begin
+   transform := MatrixIdentity;
+   transform := MatrixMultiply(transform,MatrixRotateX(DEG2RAD*FAxis.x));
+   transform := MatrixMultiply(transform,MatrixRotateY(DEG2RAD*FAxis.y));
+   transform := MatrixMultiply(transform,MatrixRotateZ(DEG2RAD*FAxis.z));
+   FModel.transform:=transform;
+end;
+
+procedure TrlModel.Render;
+var FScaleEx: TVector3;
+    FColor: TColor;
+begin
+  FScaleEx:=Vector3Create(Fscale,Fscale,FScale);
+  FColor:=WHITE;
+  if Assigned(FEngine) then
+    case FDrawMode of
+      dmNormal: DrawModel(FModel, FPosition, FScale, WHITE); // Draw 3d model with texture
+      dmEx: DrawModelEx(FModel, FPosition, FAxis, FRotationAngle, FScaleEx, FColor); // Draw a model with extended parameters
+      dmWires: DrawModelWires(FModel, FPosition, FScale, FColor);  // Draw a model wires (with texture if set)
+      dmWiresEX: DrawModelWiresEx(FModel,FPosition,FAxis, FRotationAngle, FScaleEx,FColor);
+  end;
+end;
+
+procedure TrlModel.Dead;
+begin
+  if FModelDead = False then
+ begin
+   FModelDead := True;
+   FEngine.FDeadList.Add(Self);
+ end;
+end;
+
+procedure TrlModel.LoadModel(FileName: String);
+begin  //todo model exists
+  FModel:=raylib.LoadModel(PChar(FileName));
+end;
+
+procedure TrlModel.LoadModelTexture(TextureFileName: String;
+  MaterialMap: TMaterialMapIndex);
+begin   // todo file exits
+  FTexture:= LoadTexture(PChar(TextureFileName));
+  SetMaterialTexture(@FModel.materials[0], MaterialMap, FTexture);// loadig material map texture
+end;  // MATERIAL_MAP_DIFFUSE or etc.
+
 { TrlEngine }
-procedure TrlEngine.SetEngineCameraMode(AValue: TrlEngineCameraMode);
+procedure TrlEngine.SetEngineCameraMode(AValue: TCameraMode);
 begin
-  if FEngineCameraMode=AValue then Exit;
-  FEngineCameraMode:=AValue;
+  FEngineCameraMode:=AValue;   // set camera mode CAMERA_CUSTOM or CAMERA_FREE and etc..
+  SetCameraMode(EngineCamera, FEngineCameraMode);
 end;
 
-procedure TrlEngine.SetGridSlices(AValue: longint);
+procedure TrlEngine.SetDrawDebugGrid(AValue: boolean);
 begin
-  if FGridSlices=AValue then Exit;
-  FGridSlices:=AValue;
-end;
-
-procedure TrlEngine.SetGridSpacing(AValue: single);
-begin
-  if FGridSpacing=AValue then Exit;
-  FGridSpacing:=AValue;
-end;
-
-procedure TrlEngine.SetShowSkyBox(AValue: boolean);
-begin
-  if FShowSkyBox=AValue then Exit;
-  FShowSkyBox:=AValue;
-end;
-
-procedure TrlEngine.SetUseMouse(AValue: boolean);
-begin
-  if FUseMouse=AValue then Exit;
-  FUseMouse:=AValue;
-end;
-
-procedure TrlEngine.SetUsesDrawDistance(AValue: boolean);
-begin
-  if FUsesDrawDistance=AValue then Exit;
-  FUsesDrawDistance:=AValue;
-end;
-
-procedure TrlEngine.CreateSkyBox;
-{$I shader/skybox.inc}
-var Cube:TMesh;
-    mMap:Integer;
-begin
-  // Create SkyBox
-  Cube:=GenMeshCube(1.0,1.0,1.0);
-  FSkyBox:=LoadModelFromMesh(cube);
-  FSkybox.materials[0].shader := LoadShaderFromMemory(vs,fs);
-  mMap:=MATERIAL_MAP_CUBEMAP;
-  SetShaderValue(FSkybox.materials[0].shader, GetShaderLocation(FSkybox.materials[0].shader,
-  'environmentMap'), @mMap , SHADER_UNIFORM_INT);
-end;
-
-procedure TrlEngine.DoMoveUpdate;
-begin
-//
-end;
-
-procedure TrlEngine.DoMoveEndUpdate;
-begin
-//
-end;
-
-procedure TrlEngine.SetDrawsGrid(AValue: boolean);
-begin
-  if FDrawsGrid=AValue then Exit;
-  FDrawsGrid:=AValue;
-end;
-
-procedure TrlEngine.SetDebug(AValue: boolean);
-begin
-  if FDebug=AValue then Exit;
-  FDebug:=AValue;
+  if FDrawDebugGrid=AValue then Exit;
+  FDrawDebugGrid:=AValue;
 end;
 
 procedure TrlEngine.SetDrawDistance(AValue: single);
@@ -245,32 +415,19 @@ begin
   FList := TList.Create;
   FDeadList := TList.Create;
 
-  SetEngineCameraMode(cmThirdPerson);
+  EngineCamera.position:=Vector3Create(10,10,10);    // Camera position
+  EngineCamera.target:=Vector3Create(0.0,0.0,0.0);   // Camera looking at point
+  EngineCamera.up:=Vector3Create(0.0,1.0,0.0);       // Camera up vector (rotation towards target)
+  EngineCamera.fovy:=45.0;                           // Camera field-of-view Y
+  EngineCamera.projection:=CAMERA_PERSPECTIVE;       // Camera mode type
 
-  rlTPCameraInit(@CameraThirdPerson, 45, Vector3Create( 0, 0 ,0 ));
-  rlFPCameraInit(@CameraFirstPerson, 45, Vector3Create( 0, 0, 0 ));
-
-  CameraFirstPerson.MoveSpeed.z := 10;
-  CameraFirstPerson.MoveSpeed.x := 10;
-  CameraFirstPerson.FarPlane := 5000;
-
-  CameraThirdPerson.MoveSpeed.z:=10;
-  CameraThirdPerson.MoveSpeed.x:=10;
-  CameraThirdPerson.FarPlane:=5000;
-
-  FUseMouse:=False;
-  FDrawsGrid:=False;
-  FDebug:=False;
-  FGridSpacing:=2;
-  FGridSlices:=10;
-  FDrawDistance:=100;
-  FUsesDrawDistance:=true;
-
-  CreateSkyBox;
+  DrawDistance:=0.0;
+  SetEngineCameraMode(CAMERA_ORBITAL); // set camera mode CAMERA_CUSTOM or CAMERA_FREE and etc..
+  SetDebugGrid(10,1); // set size debug grid
 end;
 
 destructor TrlEngine.Destroy;
-var i: integer;
+  var i: integer;
 begin
   for i := 0 to FList.Count- 1 do TrlModel(FList.Items[i]).Destroy;
   FList.Destroy;
@@ -278,305 +435,57 @@ begin
   inherited Destroy;
 end;
 
-procedure TrlEngine.Move(MoveCount: single);
-var
-  i: Integer;
+procedure TrlEngine.Update;
+var i: integer;
 begin
-   case FEngineCameraMode of
-     cmFirstPerson:
-       begin
-         rlFPCameraUpdate(@CameraFirstPerson);
-         rlFPCameraUseMouse(@CameraFirstPerson,FUseMouse);
-         FCollisionDrawDistance:=CameraFirstPerson.CameraPosition;
-       end;
-
-     cmThirdPerson:
-       begin
-         rlTPCameraUpdate(@CameraThirdPerson);
-         rlTPCameraUseMouse(@CameraThirdPerson,FUseMouse,1);
-         FCollisionDrawDistance:=CameraThirdPerson.CameraPosition;
-       end;
-   end;
-
- DoMoveUpdate;
-for i := 0 to FList.Count - 1 do
-  begin
-    //TrlModel(List.Items[i]).Update3dModelAnimations(MoveCount);
-    TrlModel(FList.Items[i]).Move(MoveCount);
-  end;
-
- DoMoveEndUpdate;
-
+  UpdateCamera(@EngineCamera); // camera update
+  for i := 0 to FList.Count - 1 do  // update all model and animation
+    begin
+      TrlModel(FList.Items[i]).Update;
+    end;
 end;
 
-procedure TrlEngine.Draw;
-var
-  i: Integer;
+procedure TrlEngine.Render;
+var i: longint;
 begin
+  BeginMode3D(EngineCamera);
 
-  case FEngineCameraMode of
-    cmFirstPerson: rlFPCameraBeginMode3D(@CameraFirstPerson);
-    cmThirdPerson: rlTPCameraBeginMode3D(@CameraThirdPerson);
-  end;
-
-  if ShowSkyBox then // Draw Skybox
+  for i:=0 to FList.Count-1 do
     begin
-     rlDisableBackfaceCulling();
-     rlDisableDepthMask();
-     DrawModel(FSkybox, Vector3Create(0, 0, 0), 1.0, white);
-     rlEnableBackfaceCulling();
-     rlEnableDepthMask();
+      TrlModel(FList.Items[i]).Render;
+      if Self.DrawDistance >0 then  // DrawDistance
+        begin
+         if Vector3Distance(EngineCamera.position, TrlModel(FList.Items[i]).Position) <= self.FDrawDistance
+         then TrlModel(FList.Items[i]).Render;
+        end else
+         TrlModel(FList.Items[i]).Render; // else Draw all model
     end;
 
-  for i := 0 to FList.Count - 1 do
-    begin
-     if FUsesDrawDistance then
-       begin
-        if Vector3Distance(FCollisionDrawDistance, TrlModel(FList.Items[i]).Position) <= self.FDrawDistance
-        then TrlModel(FList.Items[i]).Draw;
-       end;
-
-     if FDebug then
-        begin // Draw debug collisions (Sphere or Bounding Box)
-          if TrlModel(FList.Items[i]).CollisionMode = cmSphere then
-          DrawSphereWires(TrlModel(FList.Items[i]).FCollisionSphere,TrlModel(FList.Items[i]).CollisionRadius,10,10,GREEN);
-          if TrlModel(FList.Items[i]).CollisionMode = cmBBox then
-          DrawBoundingBox(TrlModel(FList.Items[i]).FCollisionBBox,BLUE);
-        end;
-    end;
-
-  if FDrawsGrid then DrawGrid(FGridSlices, FGridSpacing);
-
-  case FEngineCameraMode of
-     cmFirstPerson: rlFPCameraEndMode3D;
-     cmThirdPerson: rlTPCameraEndMode3D;
-  end;
-
+  if DrawDebugGrid then DrawGrid(FGridSlice, FGridSpace);
+  EndMode3D;
 end;
 
 procedure TrlEngine.ClearDeadModel;
-var
-  i: Integer;
-begin
-  for i := 0 to FDeadList.Count - 1 do
+var i: Integer;
   begin
-    if FDeadList.Count >= 1 then
+    for i := 0 to FDeadList.Count - 1 do
     begin
-      if TrlModel(FDeadList.Items[i]).FModelDead = True then
+      if FDeadList.Count >= 1 then
       begin
+        if TrlModel(FDeadList.Items[i]).FModelDead = True then
         TrlModel(FDeadList.Items[i]).FEngine.FList.Remove(FDeadList.Items[i]);
       end;
     end;
-  end;
-  FDeadList.Clear;
+    FDeadList.Clear;
 end;
 
-procedure TrlEngine.LoadSkyBoxFile(FileName: string);
-var img:TImage;
+procedure TrlEngine.SetDebugGrid(slices: longint; spacing: single);
 begin
-   img := LoadImage(PChar(FileName));// сделать отдельный класс для скай бокса
-   FSkybox.materials[0].maps[MATERIAL_MAP_CUBEMAP].texture := LoadTextureCubemap(img, CUBEMAP_LAYOUT_AUTO_DETECT);
-   UnloadImage(img);
+  FGridSlice:= Slices;
+  FGridSpace:= Spacing;
 end;
 
-{ TrlModel }
-
-procedure TrlModel.SetScale(AValue: Single);
-begin
-  FScale:=AValue;
-  Vector3Set(@FScaleEx,FScale,FScale,FScale);
-  FModel.transform:=MatrixScale(FScale,FScale,FScale);
-end;
-
-{$HINTS OFF}
-procedure TrlModel.DoCollision(CollisonModel: TrlModel);
-begin
-// Nothing
-end;
-{$HINTS ON}
-
-procedure TrlModel.SetPosition(AValue: TVector3);
-begin
-  FPosition:=AValue;
-end;
-
-procedure TrlModel.SetPositionX(AValue: single);
-begin
-  if FPositionX=AValue then Exit;
-  FPositionX:=AValue;
-  FPosition.X:=FPositionX;
-end;
-
-procedure TrlModel.SetPositionY(AValue: single);
-begin
-  if FPositionY=AValue then Exit;
-  FPositionY:=AValue;
-  FPosition.Y:=FPositionY;
-end;
-
-procedure TrlModel.SetPositionZ(AValue: single);
-begin
-  if FPositionZ=AValue then Exit;
-  FPositionZ:=AValue;
-  FPosition.Z:=FPositionZ;
-end;
-
-procedure TrlModel.SetDrawMode(AValue: TrlEngineDrawMode);
-begin
-  if FDrawMode=AValue then Exit;
-  FDrawMode:=AValue;
-end;
-
-function TrlModel.GetPositionX: single;
-begin
-  result:=FPosition.x;
-end;
-
-function TrlModel.GetPositionY: single;
-begin
-  result:=FPosition.y;
-end;
-
-function TrlModel.GetPositionZ: single;
-begin
-  result:=FPosition.z;
-end;
-
-procedure TrlModel.SetCollisionAutoSize(AValue: boolean);
-begin
-  if FCollisionAutoSize=AValue then Exit;
-  FCollisionAutoSize:=AValue;
-end;
-
-procedure TrlModel.SetCollisionMode(AValue: TrlModelCollisionMode);
-begin
-  if FCollisionMode=AValue then Exit;
-  FCollisionMode:=AValue;
-end;
-
-procedure TrlModel.SetCollisionRadius(AValue: single);
-begin
-  if FCollisionRadius=AValue then Exit;
-  FCollisionRadius:=AValue;
-end;
-
-constructor TrlModel.Create(Engine: TrlEngine);
-begin
-  FEngine := Engine;
-  FEngine.FList.Add(Self);
-  FDrawMode:=dmNormal;
-  FColor:=WHITE;
-  FAngle:=0.0;
-  FPosition:=Vector3Create(0.0,0.0,0.0);
-  FAxis:=Vector3Create(0.0,0.0,0.0);
-  CollisionMode:=cmBBox;
-  CollisionRadius:=1;
-  Collisioned:=false;
-  FCollisionAutoSize:=true;
-  DrawMode:=dmEx;
-
-
-end;
-
-destructor TrlModel.Destroy;
-begin
-  UnloadTexture(Self.FTexture);
-  UnloadModel(Self.FModel);
-  inherited Destroy;
-end;
-{$HINTS OFF}
-procedure TrlModel.Move(const MoveCount: Single);
-begin
-   FModel.transform:=MatrixRotateXYZ(Vector3Create(DEG2RAD*FAxisX,DEG2RAD*FAxisY,DEG2RAD*FAxisZ));
-   Vector3Set(@FAxis,DEG2RAD*FAxisX,DEG2RAD*FAxisY,DEG2RAD*FAxisZ);
-
-   if (CollisionMode = cmSphere) and FCollisionAutoSize then
-     // memorize the position for collisions
-     Vector3Set(@FCollisionSphere,PositionX,PositionY,PositionZ);
-
-   if (CollisionMode = cmBBox) and FCollisionAutoSize then
-   begin
-     // memorize the collision position and adjust to the size
-     FCollisionBBox:=GetModelBoundingBox(self.Model);
-     FCollisionBBox.min:=Vector3Scale(FCollisionBBox.min,Self.Scale);
-     FCollisionBBox.max:=Vector3Scale(FCollisionBBox.max,Self.Scale);
-     FCollisionBBox.min:=Vector3Add(FCollisionBBox.min,self.Position);
-     FCollisionBBox.max:=Vector3Add(FCollisionBBox.max,self.Position);
-   end;
-   { #todo 2 -oguvacode -cCollison : Add ray collision for First Person }
-
-   collision;
-end;
-{$HINTS ON}
-procedure TrlModel.LoadingModel(FileName: String);
-begin
-  FModel:=LoadModel(PChar(FileName));
-end;
-
-procedure TrlModel.LoadingModelTexture(FileName: String);
-begin
-  FTexture:= LoadTexture(PChar(FileName));
-  SetMaterialTexture(@FModel.materials[0], MATERIAL_MAP_DIFFUSE, FTexture);
-end;
-
-procedure TrlModel.Dead;
-begin
-   if FModelDead = False then
-  begin
-    FModelDead := True;
-    FEngine.FDeadList.Add(Self);
-  end;
-end;
-
-procedure TrlModel.Draw;
-begin
-    if Assigned(FEngine) then
-    case FDrawMode of
-    dmNormal: DrawModel(FModel, FPosition, FScale, WHITE); // Draw 3d model with texture
-    dmEx: DrawModelEx(FModel, FPosition, FAxis, FAngle, FScaleEx, FColor); // Draw a model with extended parameters
-    dmWires: DrawModelWires(FModel, FPosition, FScale, FColor);  // Draw a model wires (with texture if set)
-    dmWiresEX: DrawModelWiresEx(FModel,FPosition,FAxis, FAngle, FScaleEx,FColor);
-    end;
-end;
-
-procedure TrlModel.Collision(const Other: TrlModel);
-var
-  IsCollide: Boolean;
-begin
-  IsCollide := False;
-
-   if (Collisioned and Other.Collisioned) and (not FModelDead) and (not Other.FModelDead) then
-   begin
-   // Sphere <> Shpere
-   if (self.CollisionMode = cmSphere) and (Other.CollisionMode = cmSphere) then
-   isCollide := CheckCollisionSpheres(Self.FCollisionSphere,Self.FCollisionRadius,Other.FCollisionSphere,Other.FCollisionRadius);
-   // Box <> Box
-   if (self.CollisionMode = cmBBox) and (Other.CollisionMode = cmBBox) then
-   isCollide:= CheckCollisionBoxes(Self.FCollisionBBox,Other.FCollisionBBox);
-   // Box <> Sphere
-   if (self.CollisionMode = cmBBox) and (Other.CollisionMode = cmSphere) then
-   isCollide:= CheckCollisionBoxSphere(Self.FCollisionBBox,Other.FCollisionSphere,Other.FCollisionRadius);
-   // Sphere <> Box
-   if (self.CollisionMode = cmSphere) and (Other.CollisionMode = cmBBox) then
-   isCollide:= CheckCollisionBoxSphere(Other.FCollisionBBox,Self.FCollisionSphere,Self.FCollisionRadius);
-   end;
-   { #todo 2 -oguvacode -cCollison : Add ray collision for First Person }
-
-   if IsCollide then
-     begin
-       DoCollision(Other);
-       Other.DoCollision(Self);
-     end;
-end;
-
-procedure TrlModel.Collision;
-var I: Integer;
-begin
-if (FEngine <> nil) and (not FModelDead) and (FCollisioned) then
- begin
-   for i := 0 to FEngine.FList.Count - 1 do Self.Collision(TrlModel(FEngine.FList.Items[i]));
- end;
-end;
+initialization
+InitCosSinTables();
 
 end.
-
