@@ -1,10 +1,10 @@
 (*
-██████╗ ██╗      ███████╗███╗   ██╗ ██████╗ ██╗███╗   ██╗███████╗     ██╗    ██████╗
-██╔══██╗██║      ██╔════╝████╗  ██║██╔════╝ ██║████╗  ██║██╔════╝    ███║   ██╔═████╗
-██████╔╝██║█████╗█████╗  ██╔██╗ ██║██║  ███╗██║██╔██╗ ██║█████╗      ╚██║   ██║██╔██║
-██╔══██╗██║╚════╝██╔══╝  ██║╚██╗██║██║   ██║██║██║╚██╗██║██╔══╝       ██║   ████╔╝██║
-██║  ██║███████╗ ███████╗██║ ╚████║╚██████╔╝██║██║ ╚████║███████╗     ██║██╗╚██████╔╝
-╚═╝  ╚═╝╚══════╝ ╚══════╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝╚══════╝     ╚═╝╚═╝ ╚═════╝
+██████╗ ██╗      ███████╗███╗   ██╗ ██████╗ ██╗███╗   ██╗███████╗
+██╔══██╗██║      ██╔════╝████╗  ██║██╔════╝ ██║████╗  ██║██╔════╝
+██████╔╝██║█████╗█████╗  ██╔██╗ ██║██║  ███╗██║██╔██╗ ██║█████╗
+██╔══██╗██║╚════╝██╔══╝  ██║╚██╗██║██║   ██║██║██║╚██╗██║██╔══╝
+██║  ██║███████╗ ███████╗██║ ╚████║╚██████╔╝██║██║ ╚████║███████╗
+╚═╝  ╚═╝╚══════╝ ╚══════╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝╚══════╝
 *)
 unit rlengine;
 
@@ -18,6 +18,7 @@ uses
 type
   TrlEngineDrawMode = (dmNormal, dmEx, dmWires, dmWiresEx); // draw model mode
   TJumpState = (jsNone, jsJumping, jsFalling); // state for jump
+  TrlModelCollisionMode = (cmBBox,cmSphere);
 
   { TrlEngine }
   TrlEngine = class
@@ -51,20 +52,35 @@ type
   TrlModel = class
     private
       FAxis: TVector3;
+      FCollisionAutoSize: boolean;
+      FCollisionBBox: TBoundingBox;
+      FCollisioned: Boolean;
+      FCollisionMode: TrlModelCollisionMode;
+      FCollisionRadius: single;
+      FCollisionSphere: TVector3;
       FDrawMode: TrlEngineDrawMode;
+      FName: string;
       FPosition: TVector3;
       FRotationAngle: single;
       FScale: Single;
       procedure SetAxis(AValue: TVector3);
+      procedure SetCollisionAutoSize(AValue: boolean);
+      procedure SetCollisionBBox(AValue: TBoundingBox);
+      procedure SetCollisionMode(AValue: TrlModelCollisionMode);
+      procedure SetCollisionRadius(AValue: single);
+      procedure SetCollisionSphere(AValue: TVector3);
       procedure SetDrawMode(AValue: TrlEngineDrawMode);
+      procedure SetName(AValue: string);
       procedure SetPosition(AValue: TVector3);
       procedure SetRotationAngle(AValue: single);
       procedure SetScale(AValue: Single);
+      procedure Collision(const OtherModel: TrlModel); overload; virtual;
     protected
       FModelDead: Boolean;
       FEngine: TrlEngine;
       FModel: TModel;
       FTexture: TTexture;
+      procedure DoCollision(CollisonModel: TrlModel); virtual;
     public
       constructor Create(Engine: TrlEngine); virtual;
       destructor Destroy; override;
@@ -73,12 +89,25 @@ type
       procedure Dead;
       procedure LoadModel(FileName: String); virtual;
       procedure LoadModelTexture(TextureFileName:String; MaterialMap: TMaterialMapIndex);
+
+      procedure Collision; overload; virtual;
+      property CollisionAutoSize: boolean read FCollisionAutoSize write SetCollisionAutoSize;
+      property CollisionSphere: TVector3 read FCollisionSphere write SetCollisionSphere;
+      property CollisionBBox: TBoundingBox read FCollisionBBox write SetCollisionBBox;
+      property Collisioned: Boolean read FCollisioned write FCollisioned;
+      property CollisionMode: TrlModelCollisionMode read FCollisionMode write SetCollisionMode;
+      property CollisionRadius: single read FCollisionRadius write SetCollisionRadius;
+
+
       property DrawMode: TrlEngineDrawMode read FDrawMode write SetDrawMode;
       property Model: TModel read FModel write FModel;
       property Axis: TVector3 read FAxis write SetAxis;
       property Position: TVector3 read FPosition write SetPosition;
       property Scale: Single read FScale write SetScale;
       property RotationAngle: single read FRotationAngle write SetRotationAngle;
+      property Name:string read FName write SetName;
+
+
     end;
 
   { TrlAnimatedModel }
@@ -207,7 +236,8 @@ begin
        case Value of
             jsNone, jsFalling:
             begin
-                 FVelocity.y := 0;
+               //  FVelocity.X := 0;
+                 FVelocity.Y := 0;
             end;
        end;
   end;
@@ -253,14 +283,15 @@ begin
         FVelocity.Y := FVelocity.Y - FJumpSpeed;
         if FVelocity.Y > FMaxFallSpeed then
            FVelocity.Y := FMaxFallSpeed;
-        if FPosition.Y < 0 then
+        {if FPosition.Y < 0 then
         begin
           FJumpState := jsNone;
           FVelocity.Y:=0;
-        end;
+        end; }
       end;
   end;
   DoJump := False;
+
 end;
 
 procedure TrlJumperModel.Accelerate;
@@ -271,8 +302,10 @@ begin
     if FSpeed > FMaxSpeed then
        FSpeed := FMaxSpeed;
   end;
+
     FVelocity.X := m_Sin(Trunc(FDirection.X)) * Speed;
     FVelocity.Z := m_Sin(Trunc(FDirection.Z)) * Speed;
+
 end;
 
 procedure TrlJumperModel.Deccelerate;
@@ -321,10 +354,10 @@ end;
 
 procedure TrlPlayerModel.Update;
 begin
+  inherited Update;
   FPosition.x := FPosition.x + FVelocity.x * GetFrameTime;
   FPosition.z := FPosition.z + FVelocity.z * GetFrameTime;
   FPosition.y := FPosition.y + FVelocity.y * GetFrameTime;
-  inherited Update;
 end;
 
 procedure TrlPlayerModel.Accelerate;
@@ -356,8 +389,9 @@ end;
 { TrlAnimatedModel }
 procedure TrlAnimatedModel.SetAnimationIndex(AValue: longint);
 begin
-  FAnimFrameCounter:=0;
+  if FAnimationLoop = false then FAnimFrameCounter:=0;
   if FAnimationIndex=AValue then Exit;
+  FAnimFrameCounter:=0;
   FAnimationIndex:=AValue;
 end;
 
@@ -389,6 +423,7 @@ procedure TrlAnimatedModel.UpdateModelAnimation;
 begin
   FAnimFrameCounter:= FAnimFrameCounter + FAnimationSpeed * GetFrameTime;
   Raylib.UpdateModelAnimation(Fmodel, FAnims[FAnimationIndex], Round(FAnimFrameCounter));
+
   if (FAnimFrameCounter >= FAnims[FAnimationIndex].frameCount) and (FAnimationLoop) then
       FAnimFrameCounter:=0
   else
@@ -420,16 +455,56 @@ begin
   FAxis:=AValue;
 end;
 
+procedure TrlModel.SetCollisionAutoSize(AValue: boolean);
+begin
+  if FCollisionAutoSize=AValue then Exit;
+  FCollisionAutoSize:=AValue;
+end;
+
+procedure TrlModel.SetCollisionBBox(AValue: TBoundingBox);
+begin
+  FCollisionBBox:=AValue;
+end;
+
+procedure TrlModel.SetCollisionMode(AValue: TrlModelCollisionMode);
+begin
+  FCollisionMode:=AValue;
+end;
+
+procedure TrlModel.SetCollisionRadius(AValue: single);
+begin
+  if FCollisionRadius=AValue then Exit;
+  FCollisionRadius:=AValue;
+end;
+
+procedure TrlModel.SetCollisionSphere(AValue: TVector3);
+begin
+  FCollisionSphere:=AValue;
+end;
+
 procedure TrlModel.SetDrawMode(AValue: TrlEngineDrawMode);
 begin
   if FDrawMode=AValue then Exit;
   FDrawMode:=AValue;
 end;
 
+procedure TrlModel.SetName(AValue: string);
+begin
+  if FName=AValue then Exit;
+  FName:=AValue;
+end;
+
 procedure TrlModel.SetScale(AValue: Single);
 begin
   if FScale=AValue then Exit;
   FScale:=AValue;
+end;
+
+procedure TrlModel.DoCollision(CollisonModel: TrlModel);
+begin
+  {$HINTS OFF}
+  // Nothing
+  {$HINTS ON}
 end;
 
 { TrlModel }
@@ -442,6 +517,10 @@ begin
   Position:=Vector3Create(0.0,0.0,0.0);
   Axis:=Vector3Create(0.0,0.0,0.0);
   Scale:=1.0;
+  CollisionMode:=cmBBox;
+  CollisionRadius:=1;
+  Collisioned:=false;
+
 end;
 
 destructor TrlModel.Destroy;
@@ -459,6 +538,20 @@ begin
    transform := MatrixMultiply(transform,MatrixRotateY(DEG2RAD*FAxis.y));
    transform := MatrixMultiply(transform,MatrixRotateZ(DEG2RAD*FAxis.z));
    FModel.transform:=transform;
+
+   if (CollisionMode = cmSphere) then
+     Vector3Set(@FCollisionSphere,FPosition.x,FPosition.y,FPosition.z);
+
+   if (CollisionMode = cmBBox) and (FCollisionAutoSize) then
+   begin
+     FCollisionBBox:=GetModelBoundingBox(self.Model);
+     FCollisionBBox.min:=Vector3Scale(FCollisionBBox.min,FScale);
+     FCollisionBBox.max:=Vector3Scale(FCollisionBBox.max,FScale);
+     FCollisionBBox.min:=Vector3Add(FCollisionBBox.min,FPosition);
+     FCollisionBBox.max:=Vector3Add(FCollisionBBox.max,FPosition);
+   end;
+   { #todo 2 -oguvacode -cCollison : Add ray collision for First Person }
+
 end;
 
 procedure TrlModel.Render;
@@ -474,6 +567,7 @@ begin
       dmWires: DrawModelWires(FModel, FPosition, FScale, FColor);  // Draw a model wires (with texture if set)
       dmWiresEX: DrawModelWiresEx(FModel,FPosition,FAxis, FRotationAngle, FScaleEx,FColor); // Draw a model wires with extended parameters
   end;
+ // DrawBoundingBox(FCollisionBBox,RED)
 end;
 
 procedure TrlModel.Dead;
@@ -488,6 +582,7 @@ end;
 procedure TrlModel.LoadModel(FileName: String);
 begin  //todo model exists
   FModel:=raylib.LoadModel(PChar(FileName));
+
 end;
 
 procedure TrlModel.LoadModelTexture(TextureFileName: String;
@@ -496,6 +591,44 @@ begin   // todo file exits
   FTexture:= LoadTexture(PChar(TextureFileName));
   SetMaterialTexture(@FModel.materials[0], MaterialMap, FTexture);// loadig material map texture
 end;  // MATERIAL_MAP_DIFFUSE or etc.
+
+procedure TrlModel.Collision(const OtherModel: TrlModel);
+var
+  IsCollide: Boolean=false;
+begin
+   if (Collisioned and OtherModel.Collisioned) and (not FModelDead) and (not OtherModel.FModelDead) then
+   begin
+  { // Sphere <> Shpere
+   if (self.CollisionMode = cmSphere) and (OtherModel.CollisionMode = cmSphere) then
+   isCollide := CheckCollisionSpheres(Self.FCollisionSphere,Self.FCollisionRadius,OtherModel.FCollisionSphere,
+   OtherModel.FCollisionRadius);}
+   // Box <> Box
+   if (self.CollisionMode = cmBBox) and (OtherModel.CollisionMode = cmBBox) then
+   isCollide:= CheckCollisionBoxes(Self.FCollisionBBox,OtherModel.FCollisionBBox);
+ {  // Box <> Sphere
+   if (self.CollisionMode = cmBBox) and (OtherModel.CollisionMode = cmSphere) then
+   isCollide:= CheckCollisionBoxSphere(Self.FCollisionBBox,OtherModel.FCollisionSphere,OtherModel.FCollisionRadius);
+   // Sphere <> Box
+   if (self.CollisionMode = cmSphere) and (OtherModel.CollisionMode = cmBBox) then
+   isCollide:= CheckCollisionBoxSphere(OtherModel.FCollisionBBox,Self.FCollisionSphere,Self.FCollisionRadius); }
+   end;
+   { #todo 2 -oguvacode -cCollison : Add ray collision for First Person }
+   if IsCollide then
+     begin
+       DoCollision(OtherModel);
+       OtherModel.DoCollision(Self);
+     end;
+
+end;
+
+procedure TrlModel.Collision;
+var I: Integer;
+begin
+if (FEngine <> nil) and (not FModelDead) and (FCollisioned) then
+ begin
+   for i := 0 to FEngine.FList.Count - 1 do Self.Collision(TrlModel(FEngine.FList.Items[i]));
+ end;
+end;
 
 { TrlEngine }
 procedure TrlEngine.SetEngineCameraMode(AValue: TCameraMode);

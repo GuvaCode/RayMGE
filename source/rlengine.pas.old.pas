@@ -710,9 +710,6 @@ begin
   // Vector3Set(@FAxis, DEG2RAD*FAxisX , DEG2RAD * FAxisY , DEG2RAD * FAxisZ);
  //  Faxis.x:=DEG2RAD*Faxis.x;
 
-
-
-
    if (CollisionMode = cmSphere) and FCollisionAutoSize then
      // memorize the position for collisions
      Vector3Set(@FCollisionSphere,PositionX,PositionY,PositionZ);
