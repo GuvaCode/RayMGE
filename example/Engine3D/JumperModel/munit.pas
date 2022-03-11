@@ -49,7 +49,6 @@ begin
   Cbox.min:=Vector3Create(Self.Position.x-0.5, Self.Position.y      ,self.Position.z-0.5);
   CollisionBBox:=Cbox;
 
-
   if IsKeyPressed(Key_W) then
   begin
     self.AnimationIndex:=1;

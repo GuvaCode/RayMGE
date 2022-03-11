@@ -184,30 +184,6 @@ type
          property DoJump: Boolean read  FDoJump write FDoJump;
     end;
 
-  { TrlJumperModel }
- { TrlJumperModel = class(TrlPlayerModel)
-  private
-    FJumpCount: Integer;
-    FJumpSpeed: Single;
-    FJumpHeight: Single;
-    FMaxFallSpeed: Single;
-    FDoJump: Boolean;
-    FJumpState: TJumpState;
-    procedure SetJumpState(Value: TJumpState);
-  public
-    constructor Create(Engine: TrlEngine); override;
-    procedure Update; override;
-    procedure Accelerate; override;
-    procedure Deccelerate; override;
-    property JumpCount: Integer read FJumpCount write FJumpCount;
-    property JumpState: TJumpState read FJumpState write SetJumpState;
-    property JumpSpeed: Single read FJumpSpeed write FJumpSpeed;
-    property JumpHeight: Single read FJumpHeight write FJumpHeight;
-    property MaxFallSpeed: Single read FMaxFallSpeed write FMaxFallSpeed;
-    property DoJump: Boolean read FDoJump write FDoJump;
-  end;  }
-
-
   function  m_Cos( Angle : Integer ) : Single;
   function  m_Sin( Angle : Integer ) : Single;
   procedure InitCosSinTables;
