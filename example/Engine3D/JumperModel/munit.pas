@@ -55,6 +55,7 @@ begin
     self.AnimationIndex:=1;
     self.DoJump:=true;
     self.AnimationLoop:=false;
+    //self.JumpState:=jsJumping;
   end;
 
   if IsKeyDown(Key_D) then

@@ -135,7 +135,6 @@ type
   end;
 
   { TrlPlayerModel }
-
   TrlPlayerModel = class(TrlAnimatedModel)
   private
     FAcc: Single;
@@ -161,8 +160,32 @@ type
     property Direction: TVector3 read FDirection write SetDirection;
   end;
 
-  { TrlJumperModel }
+  { TJumperSprite }
+
   TrlJumperModel = class(TrlPlayerModel)
+     private
+         FJumpCount: Integer;
+         FJumpSpeed: Single;
+         FJumpHeight: Single;
+         FMaxFallSpeed: Single;
+         FDoJump: Boolean;
+         FJumpState: TJumpState;
+         procedure SetJumpState(Value: TJumpState);
+    public
+         constructor Create(Engine: TrlEngine); override;
+         procedure Update; override;
+         procedure Accelerate; override;
+         procedure Deccelerate; override;
+         property JumpCount: Integer read FJumpCount write FJumpCount;
+         property JumpState: TJumpState read FJumpState write SetJumpState;
+         property JumpSpeed: Single read FJumpSpeed write FJumpSpeed;
+         property JumpHeight: Single read FJumpHeight write FJumpHeight;
+         property MaxFallSpeed: Single read FMaxFallSpeed write FMaxFallSpeed;
+         property DoJump: Boolean read  FDoJump write FDoJump;
+    end;
+
+  { TrlJumperModel }
+ { TrlJumperModel = class(TrlPlayerModel)
   private
     FJumpCount: Integer;
     FJumpSpeed: Single;
@@ -182,7 +205,7 @@ type
     property JumpHeight: Single read FJumpHeight write FJumpHeight;
     property MaxFallSpeed: Single read FMaxFallSpeed write FMaxFallSpeed;
     property DoJump: Boolean read FDoJump write FDoJump;
-  end;
+  end;  }
 
 
   function  m_Cos( Angle : Integer ) : Single;
@@ -227,97 +250,92 @@ for i := 0 to 360 do
   end;
 end;
 
-{ TJumperModel }
+{ TrlJumperModel }
+
 procedure TrlJumperModel.SetJumpState(Value: TJumpState);
 begin
-  if FJumpState <> Value then
-  begin
-       FJumpState := Value;
-       case Value of
-            jsNone, jsFalling:
-            begin
-               //  FVelocity.X := 0;
-                 FVelocity.Y := 0;
-            end;
-       end;
-  end;
+   if FJumpState <> Value then
+     begin
+          FJumpState := Value;
+          case Value of
+               jsNone,
+               jsFalling:
+               begin
+                    FVelocity.Y := 0;
+               end;
+          end;
+     end;
 end;
 
 constructor TrlJumperModel.Create(Engine: TrlEngine);
 begin
-  inherited Create(Engine);
-  FVelocity:=Vector3Create(0,0,0);
-  FDirection := Vector3Create(0,0,0);
-  MaxSpeed := FMaxSpeed;
-  FJumpState := jsNone;
-  FJumpSpeed := 0.25;
-  FJumpHeight := 8;
-  Acceleration := 0.2;
-  Decceleration := 0.2;
-  FMaxFallSpeed := 5;
-  DoJump := False;
+  //inherited Create(Engine);
+  inherited;
+     FVelocity.X := 0;
+     FVelocity.Y := 0;
+     MaxSpeed := FMaxSpeed;
+     FDirection := Vector3Create(0,0,0);
+     FJumpState := jsNone;
+     FJumpSpeed := 0.25;
+     FJumpHeight := 5;
+     Acceleration := 0.2;
+     Decceleration := 0.2;
+     FMaxFallSpeed := 10;
+     DoJump:= False;
 end;
 
 procedure TrlJumperModel.Update;
 begin
-  inherited;
-  case FJumpState of
-    jsNone:
-      begin
-        if DoJump then
-        begin
-          FJumpState := jsJumping;
-          FVelocity.Y := FJumpHeight;
-        end;
-      end;
-    jsJumping:
-      begin
-        Fposition.y := Fposition.y + FVelocity.y * GetFrameTime;
-        FVelocity.y := FVelocity.y + FJumpSpeed;
-        if FVelocity.Y > 0 then
-           FJumpState := jsFalling;
-      end;
-    jsFalling:
-      begin
-        Fposition.Y := Fposition.Y + FVelocity.Y * GetFrameTime;
-        FVelocity.Y := FVelocity.Y - FJumpSpeed;
-        if FVelocity.Y > FMaxFallSpeed then
-           FVelocity.Y := FMaxFallSpeed;
-        {if FPosition.Y < 0 then
-        begin
-          FJumpState := jsNone;
-          FVelocity.Y:=0;
-        end; }
-      end;
-  end;
-  DoJump := False;
+  inherited Update;
+   case FJumpState of
+          jsNone:
+          begin
+               if DoJump then
+               begin
+                    FJumpState := jsJumping;
+                    FVelocity.Y :=  FJumpHeight;
+               end;
+          end;
+          jsJumping:
+          begin
+               FPosition.Y:=Position.Y + FVelocity.Y * GetFrameTime;
+               FVelocity.Y:=FVelocity.Y + FJumpSpeed;
+               if FVelocity.Y > 0 then
+                 FJumpState := jsFalling;
 
+          end;
+          jsFalling:
+          begin
+               FPosition.Y:=FPosition.Y + FVelocity.Y * GetFrameTime;;
+               FVelocity.Y:=Velocity.Y-FJumpSpeed;
+               if FVelocity.Y > FMaxFallSpeed then
+                  FVelocity.Y := FMaxFallSpeed;
+          end;
+     end;
+
+     DoJump := False;
 end;
 
 procedure TrlJumperModel.Accelerate;
 begin
-    if FSpeed <> FMaxSpeed then
-  begin
-    FSpeed := FSpeed + FAcc;
-    if FSpeed > FMaxSpeed then
-       FSpeed := FMaxSpeed;
-  end;
-
+ if FSpeed <> FMaxSpeed then
+ begin
+   FSpeed:= FSpeed+FAcc;
+   if FSpeed > FMaxSpeed then FSpeed := FMaxSpeed;
     FVelocity.X := m_Sin(Trunc(FDirection.X)) * Speed;
     FVelocity.Z := m_Sin(Trunc(FDirection.Z)) * Speed;
-
+ end;
 end;
 
 procedure TrlJumperModel.Deccelerate;
 begin
-if FSpeed <> FMinSpeed then
-  begin
-    FSpeed := FSpeed - FDcc;
-    if FSpeed < FMinSpeed then
-      FSpeed := FMinSpeed;
-  end;
-  FVelocity.X := m_Sin(Trunc(FDirection.X)) * Speed;
-  FVelocity.Z := m_Sin(Trunc(FDirection.Z)) * Speed;
+  if FSpeed <> FMaxSpeed then
+    begin
+      FSpeed:= FSpeed+FAcc;
+      if FSpeed < FMaxSpeed then FSpeed := FMaxSpeed;
+        FVelocity.X := m_Sin(Trunc(FDirection.X)) * Speed;
+        FVelocity.Z := m_Sin(Trunc(FDirection.Z)) * Speed;
+     end;
 end;
 
 { TrlPlayerModel }
@@ -567,7 +585,7 @@ begin
       dmWires: DrawModelWires(FModel, FPosition, FScale, FColor);  // Draw a model wires (with texture if set)
       dmWiresEX: DrawModelWiresEx(FModel,FPosition,FAxis, FRotationAngle, FScaleEx,FColor); // Draw a model wires with extended parameters
   end;
- // DrawBoundingBox(FCollisionBBox,RED)
+  DrawBoundingBox(FCollisionBBox,RED)
 end;
 
 procedure TrlModel.Dead;
