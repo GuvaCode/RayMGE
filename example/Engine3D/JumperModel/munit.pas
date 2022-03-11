@@ -13,14 +13,11 @@ TcolBox = class(TrlModel);
 
 TPlayer = class(TrlJumperModel)
  private
- oldPositionX:Single;
  oldPositionY:single;
-
  public
  procedure Update; override;
  constructor Create(Engine: TrlEngine); override;
  procedure DoCollision(CollisonModel: TrlModel); override;
-
 end;
 
 TGame = class(TrlApplication)
@@ -54,7 +51,6 @@ begin
     self.AnimationIndex:=1;
     self.DoJump:=true;
     self.AnimationLoop:=false;
-    //self.JumpState:=jsJumping;
   end;
 
   if IsKeyDown(Key_D) then
@@ -65,9 +61,8 @@ begin
     self.JumpState:=jsFalling;
   end;
 
-collision;
-oldPositionX := self.Position.x;
-oldPositionY := self.Position.y;
+  collision;
+  OldPositionY := self.Position.y;
 end;
 
 constructor TPlayer.Create(Engine: TrlEngine);
@@ -94,15 +89,19 @@ end;
 procedure TPlayer.DoCollision(CollisonModel: TrlModel);
 begin
   inherited DoCollision(CollisonModel);
-   if (CollisonModel is TcolBox)  then
+
+  if (CollisonModel is TcolBox)  then
    begin
    self.JumpState:=jsNone;
-   self.Position:=Vector3Create(Self.oldPositionX ,OldPositionY,0);
+
+  Self.PositionY:=OldPositionY;
 
    if self.Speed>0 then
    self.animationIndex:=2;
    self.AnimationLoop:=true;
    end;
+
+
 end;
 
 constructor TGame.Create;

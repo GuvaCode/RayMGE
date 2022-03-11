@@ -61,8 +61,12 @@ type
       FDrawMode: TrlEngineDrawMode;
       FName: string;
       FPosition: TVector3;
+
       FRotationAngle: single;
       FScale: Single;
+      function GetPositionX: Single;
+      function GetPositionY: Single;
+      function GetPositionZ: Single;
       procedure SetAxis(AValue: TVector3);
       procedure SetCollisionAutoSize(AValue: boolean);
       procedure SetCollisionBBox(AValue: TBoundingBox);
@@ -72,6 +76,9 @@ type
       procedure SetDrawMode(AValue: TrlEngineDrawMode);
       procedure SetName(AValue: string);
       procedure SetPosition(AValue: TVector3);
+      procedure SetPositionX(AValue: Single);
+      procedure SetPositionY(AValue: Single);
+      procedure SetPositionZ(AValue: Single);
       procedure SetRotationAngle(AValue: single);
       procedure SetScale(AValue: Single);
       procedure Collision(const OtherModel: TrlModel); overload; virtual;
@@ -98,16 +105,16 @@ type
       property CollisionMode: TrlModelCollisionMode read FCollisionMode write SetCollisionMode;
       property CollisionRadius: single read FCollisionRadius write SetCollisionRadius;
 
-
       property DrawMode: TrlEngineDrawMode read FDrawMode write SetDrawMode;
       property Model: TModel read FModel write FModel;
       property Axis: TVector3 read FAxis write SetAxis;
       property Position: TVector3 read FPosition write SetPosition;
+      property PositionX: Single read GetPositionX write SetPositionX;
+      property PositionY: Single read GetPositionY write SetPositionY;
+      property PositionZ: Single read GetPositionZ write SetPositionZ;
       property Scale: Single read FScale write SetScale;
       property RotationAngle: single read FRotationAngle write SetRotationAngle;
       property Name:string read FName write SetName;
-
-
     end;
 
   { TrlAnimatedModel }
@@ -438,6 +445,24 @@ begin
   FPosition:=AValue;
 end;
 
+procedure TrlModel.SetPositionX(AValue: Single);
+begin
+  if FPosition.x=AValue then Exit;
+  FPosition.x:=AValue;
+end;
+
+procedure TrlModel.SetPositionY(AValue: Single);
+begin
+  if FPosition.y=AValue then Exit;
+  FPosition.y:=AValue;
+end;
+
+procedure TrlModel.SetPositionZ(AValue: Single);
+begin
+  if FPosition.z=AValue then Exit;
+  FPosition.z:=AValue;
+end;
+
 procedure TrlModel.SetRotationAngle(AValue: single);
 begin
   if FRotationAngle=AValue then Exit;
@@ -447,6 +472,21 @@ end;
 procedure TrlModel.SetAxis(AValue: TVector3);
 begin
   FAxis:=AValue;
+end;
+
+function TrlModel.GetPositionX: Single;
+begin
+ result:=Fposition.x;
+end;
+
+function TrlModel.GetPositionY: Single;
+begin
+ result:=Fposition.y;
+end;
+
+function TrlModel.GetPositionZ: Single;
+begin
+ result:=Fposition.z;
 end;
 
 procedure TrlModel.SetCollisionAutoSize(AValue: boolean);
