@@ -14,6 +14,7 @@ TcolBox = class(TrlModel);
 TPlayer = class(TrlJumperModel)
  private
  oldPositionY:single;
+ eye: TrlModel;
  public
  procedure Update; override;
  constructor Create(Engine: TrlEngine); override;
@@ -27,6 +28,7 @@ TGame = class(TrlApplication)
     engine: TrlEngine;
     ground_block: TcolBox;
     player:TPlayer;
+
     constructor Create; override;
     procedure Update; override;
     procedure Render; override;
@@ -63,6 +65,7 @@ begin
 
   collision;
   OldPositionY := self.Position.y;
+
 end;
 
 constructor TPlayer.Create(Engine: TrlEngine);
@@ -84,6 +87,12 @@ begin
   Cbox.max:=Vector3Create(Self.Position.x+0.5, Self.Position.y +1.5 ,self.Position.z+0.5);
   Cbox.min:=Vector3Create(Self.Position.x-0.5, Self.Position.y      ,self.Position.z-0.5);
   self.CollisionBBox:=Cbox;
+
+  eye:=trlModel.Create(Engine);
+  eye.LoadModel('model/mario_eyes.iqm');
+  eye.LoadModelTexture('texture/mario_eyes.png',MATERIAL_MAP_DIFFUSE);
+  eye.Axis:=Vector3Create(90,-90,self.Axis.z);
+  eye.Position:=self.Position;
 end;
 
 procedure TPlayer.DoCollision(CollisonModel: TrlModel);
