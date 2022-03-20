@@ -146,12 +146,14 @@ type
   private
     FAcc: Single;
     FDcc: Single;
-    FDirection: TVector3;
+    FDirection: Single;
     FMaxSpeed: Single;
     FMinSpeed: Single;
+    FRotation: Single;
     FSpeed: Single;
     FVelocity: TVector3;
-    procedure SetDirection(AValue: TVector3);
+    procedure SetDirection(AValue: Single);
+    procedure SetRotation(AValue: Single);
     procedure SetSpeed(AValue: Single);
   public
     constructor Create(Engine: TrlEngine); override;
@@ -164,7 +166,8 @@ type
     property Velocity: TVector3 read FVelocity write FVelocity;
     property Acceleration: Single read FAcc write FAcc;
     property Decceleration: Single read FDcc write FDcc;
-    property Direction: TVector3 read FDirection write SetDirection;
+    property Direction: Single read FDirection write SetDirection;
+    property Rotation: Single read FRotation write SetRotation;
   end;
 
   { TJumperSprite }
@@ -257,7 +260,7 @@ begin
      FVelocity.X := 0;
      FVelocity.Y := 0;
      MaxSpeed := FMaxSpeed;
-     FDirection := Vector3Create(0,0,0);
+     FDirection := 0;//(0,0,0);
      FJumpState := jsNone;
      FJumpSpeed := 0.25;
      FJumpHeight := 5;
@@ -305,8 +308,8 @@ begin
  begin
    FSpeed:= FSpeed+FAcc;
    if FSpeed > FMaxSpeed then FSpeed := FMaxSpeed;
-    FVelocity.X := m_Sin(Trunc(FDirection.X)) * Speed;
-    FVelocity.Z := m_Sin(Trunc(FDirection.Z)) * Speed;
+    FVelocity.X := m_Sin(Trunc(FDirection)) * Speed;
+    FVelocity.Z := m_Sin(Trunc(FDirection)) * Speed;
  end;
 end;
 
@@ -316,8 +319,8 @@ begin
     begin
       FSpeed:= FSpeed+FAcc;
       if FSpeed < FMaxSpeed then FSpeed := FMaxSpeed;
-        FVelocity.X := m_Sin(Trunc(FDirection.X)) * Speed;
-        FVelocity.Z := m_Sin(Trunc(FDirection.Z)) * Speed;
+        FVelocity.X := m_Sin(Trunc(FDirection)) * Speed;
+        FVelocity.Z := m_Sin(Trunc(FDirection)) * Speed;
      end;
 end;
 
@@ -328,24 +331,32 @@ begin
   else
   if FSpeed < FMinSpeed then  FSpeed := FMinSpeed;
   FSpeed := AValue;
-  FVelocity.x := m_Cos(Trunc(FDirection.x)) * Speed;
-  FVelocity.z := m_Sin(Trunc(FDirection.z)) * Speed;
-  FVelocity.y := m_Sin(Trunc(FDirection.y)) * Speed;
+  FVelocity.x := m_Cos(Trunc(FDirection)) * Speed;
+  FVelocity.z := m_Sin(Trunc(FDirection)) * Speed;
+  FVelocity.y := sin(DEG2RAD * -FRotation) * Speed ;
+ // FVelocity.y := m_Sin(Trunc(FDirection.y)) * Speed;
 end;
 
-procedure TrlPlayerModel.SetDirection(AValue: TVector3);
+procedure TrlPlayerModel.SetDirection(AValue: Single);
 begin
   FDirection := AValue;
-  FVelocity.x := m_Cos(Trunc(FDirection.x)) * Speed;
-  FVelocity.z := m_Sin(Trunc(FDirection.z)) * Speed;
-  FVelocity.y := m_Sin(Trunc(FDirection.y)) * Speed;
+  FVelocity.x := m_Cos(Trunc(FDirection)) * Speed;
+  FVelocity.z := m_Sin(Trunc(FDirection)) * Speed;
+  FVelocity.y := sin(DEG2RAD * -FRotation) * Speed ;
+  // FVelocity.y := m_Sin(Trunc(FDirection.y)) * Speed;
+end;
+
+procedure TrlPlayerModel.SetRotation(AValue: Single);
+begin
+  if FRotation=AValue then Exit;
+  FRotation:=AValue;
 end;
 
 constructor TrlPlayerModel.Create(Engine: TrlEngine);
 begin
   inherited Create(Engine);
   FVelocity:=Vector3Create(0,0,0);
-  Direction:=Vector3Create(0,0,0);
+  Direction:=0;//(0,0,0);
   Acceleration:=0;
   Decceleration:=0;
   Speed:=0;
@@ -368,9 +379,9 @@ begin
     FSpeed := FSpeed + FAcc;
     if FSpeed > FMaxSpeed then
     FSpeed := FMaxSpeed;
-    FVelocity.x := m_Cos(Trunc(FDirection.x)) * Speed;
-    FVelocity.z := m_Sin(Trunc(FDirection.z)) * Speed;
-    FVelocity.y := m_Sin(Trunc(FDirection.y)) * Speed;
+    FVelocity.x := m_Cos(Trunc(FDirection)) * Speed;
+    FVelocity.z := m_Sin(Trunc(FDirection)) * Speed;
+    FVelocity.y := sin(DEG2RAD * -FRotation) * Speed ;
   end;
 end;
 
@@ -381,9 +392,9 @@ begin
     FSpeed := FSpeed - FDcc;
     if FSpeed < FMinSpeed then
     FSpeed := FMinSpeed;
-    FVelocity.x := m_Cos(Trunc(FDirection.x)) * Speed;
-    FVelocity.z := m_Sin(Trunc(FDirection.z)) * Speed;
-    FVelocity.y := m_Sin(Trunc(FDirection.y)) * Speed;
+    FVelocity.x := m_Cos(Trunc(FDirection)) * Speed;
+    FVelocity.z := m_Sin(Trunc(FDirection)) * Speed;
+    FVelocity.y := sin(DEG2RAD * -FRotation) * Speed ;
   end;
 end;
 
