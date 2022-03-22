@@ -2,7 +2,7 @@
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃   raylibExtras * Utilities and Shared Components for Raylib                  ┃
 ┃                                                                              ┃
-┃   TPOrbitCamera * Third Person Camera Example                                ┃
+┃   TrlTPCamera * Third Person Camera Example                                  ┃
 ┃                                                                              ┃
 ┃   Original source code in C                                                  ┃
 ┃   https://github.com/raylib-extras/extras-c/blob/main/cameras                ┃

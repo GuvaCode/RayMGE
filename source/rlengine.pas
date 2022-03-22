@@ -13,10 +13,11 @@ unit rlengine;
 interface
 
 uses
-  raylib, raymath, rlgl, classes,sysutils;
+  raylib, raymath, rlgl, rlFPCamera, rlTPCamera, rlFreeCamera, classes, sysutils;
 
 type
   TrlEngineDrawMode = (dmNormal, dmEx, dmWires, dmWiresEx); // draw model mode
+  TrlEngineCameraMode = (cmFree, cmThirdPeson, cmFirstPeson);
   TJumpState = (jsNone, jsJumping, jsFalling); // state for jump
   TrlModelCollisionMode = (cmBBox,cmSphere);
 
@@ -27,15 +28,17 @@ type
       FDrawDistance: single;
       FGridSlice: longint;
       FGridSpace: single;
-      FEngineCameraMode: TCameraMode;
+      FEngineCameraMode: TrlEngineCameraMode;//TCameraMode;
       procedure SetDrawDebugGrid(AValue: boolean);
       procedure SetDrawDistance(AValue: single);
-      procedure SetEngineCameraMode(AValue: TCameraMode);
+      procedure SetEngineCameraMode(AValue: TrlEngineCameraMode);
     protected
       FList: TList; // list of model
       FDeadList: TList; // model dead list
     public
-      EngineCamera: TCamera3D;
+      EngineTpCamera:TrlTPCamera;
+      EngineFpCamera:TrlFPCamera;
+      EngineFreeCamera:TrlFreeCamera;
       constructor Create;
       destructor Destroy; override;
       procedure Update;  // update engine
@@ -43,7 +46,7 @@ type
       procedure ClearDeadModel;  // clear of death model
       procedure SetDebugGrid(slices:longint; spacing:single); // set grid size and slice
     published
-      property EngineCameraMode: TCameraMode read FEngineCameraMode write SetEngineCameraMode;
+      property EngineCameraMode: TrlEngineCameraMode read FEngineCameraMode write SetEngineCameraMode;
       property DrawDebugGrid: boolean read FDrawDebugGrid write SetDrawDebugGrid;
       property DrawDistance: single read FDrawDistance write SetDrawDistance;
   end;
@@ -544,14 +547,12 @@ begin
   if FScale=AValue then Exit;
   FScale:=AValue;
 end;
-
+{$HINTS OFF}
 procedure TrlModel.DoCollision(CollisonModel: TrlModel);
 begin
-  {$HINTS OFF}
   // Nothing
-  {$HINTS ON}
 end;
-
+{$HINTS ON}
 { TrlModel }
 constructor TrlModel.Create(Engine: TrlEngine);
 begin
@@ -676,10 +677,10 @@ if (FEngine <> nil) and (not FModelDead) and (FCollisioned) then
 end;
 
 { TrlEngine }
-procedure TrlEngine.SetEngineCameraMode(AValue: TCameraMode);
+procedure TrlEngine.SetEngineCameraMode(AValue: TrlEngineCameraMode);
 begin
   FEngineCameraMode:=AValue;   // set camera mode CAMERA_CUSTOM or CAMERA_FREE and etc..
-  SetCameraMode(EngineCamera, FEngineCameraMode);
+  //SetCameraMode(EngineCamera, FEngineCameraMode);
 end;
 
 procedure TrlEngine.SetDrawDebugGrid(AValue: boolean);
@@ -698,14 +699,24 @@ constructor TrlEngine.Create;
 begin
   FList := TList.Create;
   FDeadList := TList.Create;
-  EngineCamera.position:=Vector3Create(10,10,10);    // Camera position
-  EngineCamera.target:=Vector3Create(0.0,0.0,0.0);   // Camera looking at point
-  EngineCamera.up:=Vector3Create(0.0,1.0,0.0);       // Camera up vector (rotation towards target)
-  EngineCamera.fovy:=45.0;                           // Camera field-of-view Y
-  EngineCamera.projection:=CAMERA_PERSPECTIVE;       // Camera mode type
-  DrawDistance:=0.0;
-  SetEngineCameraMode(CAMERA_ORBITAL); // set camera mode CAMERA_CUSTOM or CAMERA_FREE and etc..
-  SetDebugGrid(10,1); // set size debug grid
+
+ rlFreeCam_Init(@EngineFreeCamera,Vector3Create ( 0, 1, 0 ),Vector3Create ( 0, 1, 0 ));
+
+ rlTPCameraInit(@EngineTpCamera, 45, Vector3Create ( 1, 0, 0 ));
+ EngineTpCamera.MoveSpeed.z := 10;
+ EngineTpCamera.MoveSpeed.x := 5;
+ EngineTpCamera.CameraPullbackDistance:=20;
+ EngineTpCamera.FarPlane := 5000;
+
+ rlFPCameraInit(@EngineFpCamera, 45, Vector3Create ( 1, 0, 0 ));
+ EngineFpCamera.MoveSpeed.z := 10;
+ EngineFpCamera.MoveSpeed.x := 5;
+ EngineFpCamera.FarPlane := 5000;
+
+
+ DrawDistance:=0.0;
+ SetEngineCameraMode(cmThirdPeson); // set camera mode
+ SetDebugGrid(10,1); // set size debug grid
 end;
 
 destructor TrlEngine.Destroy;
@@ -720,31 +731,55 @@ end;
 procedure TrlEngine.Update;
 var i: integer;
 begin
-  UpdateCamera(@EngineCamera); // camera update
-  for i := 0 to FList.Count - 1 do  // update all model and animation
+ case FEngineCameraMode of
+   cmFree: rlFreeCameraUpdate(@EngineFreeCamera);
+   cmThirdPeson: rlTPCameraUpdate(@EngineFreeCamera);
+   cmFirstPeson: rlFPCameraUpdate(@EngineFreeCamera);
+ end;
+
+ for i := 0 to FList.Count - 1 do  // update all model and animation
     begin
       TrlModel(FList.Items[i]).Update;
     end;
 end;
 
 procedure TrlEngine.Render;
-var i: longint;
+var i: longint; CamPos:TVector3;
 begin
-  BeginMode3D(EngineCamera);
+ case FEngineCameraMode of
+   cmFree:
+     begin
+       rlFreeCameraBeginMode3D(@EngineFreeCamera);
+       CamPos:=EngineFreeCamera.Position;
+     end;
+   cmThirdPeson:
+     begin
+       rlTPCameraBeginMode3D(@EngineTPCamera);
+       CamPos:=EngineTPCamera.CameraPosition;
+     end;
+   cmFirstPeson:
+     begin
+       rlFPCameraBeginMode3D(@EngineFPCamera);
+       CamPos:=EngineFPCamera.CameraPosition;
+     end;
+ end;
 
-  for i:=0 to FList.Count-1 do
-    begin
-      TrlModel(FList.Items[i]).Render;
-      if Self.DrawDistance >0 then  // DrawDistance
-        begin
-         if Vector3Distance(EngineCamera.position, TrlModel(FList.Items[i]).Position) <= self.FDrawDistance
-         then TrlModel(FList.Items[i]).Render;
-        end else
-         TrlModel(FList.Items[i]).Render; // else Draw all model
-    end;
+ for i:=0 to FList.Count-1 do
+   begin
+    if FDrawDistance >0 then
+     begin
+       if Vector3Distance(CamPos, TrlModel(FList.Items[i]).Position) <= FDrawDistance
+       then TrlModel(FList.Items[i]).Render;
+     end else TrlModel(FList.Items[i]).Render;
+   end;
 
-  if DrawDebugGrid then DrawGrid(FGridSlice, FGridSpace);
-  EndMode3D;
+ if DrawDebugGrid then DrawGrid(FGridSlice, FGridSpace);
+
+ case FEngineCameraMode of
+   cmFree: rlFreeCameraEndMode3D;
+   cmThirdPeson: rlTPCameraEndMode3D;
+   cmFirstPeson: rlFPCameraEndMode3D
+ end;
 end;
 
 procedure TrlEngine.ClearDeadModel;

@@ -32,8 +32,10 @@ begin
   ClearBackgroundColor:= BLACK; // Set background color (framebuffer clear color)
 
   Engine:=TrlEngine.Create;
-  Engine.EngineCameraMode:=4;
+  Engine.EngineCameraMode:=cmFree;
   Engine.DrawDebugGrid:=true;
+
+
 
   Ship:=TrlPlayerModel.Create(Engine);
   Ship.LoadModel('model/spaceship2.iqm');
@@ -45,6 +47,9 @@ begin
   Ship.MaxSpeed:=10;
   Ship.MinSpeed:=0;
 //  Ship.RotationAngle:=90;
+
+// rlFreeCam_SetPosition(Engine.EngineFreeCamera
+
 end;
 
 procedure TGame.Update;
@@ -54,13 +59,24 @@ begin
   if IsKeyDown(Key_A) then // Left
   begin
     Vector3Set(@Ship.Axis, Ship.Axis.x,Ship.Axis.y-1 , 0);
-
+    if Ship.RotationAngle >= -10 then
+    Ship.RotationAngle:=Ship.RotationAngle-1;
+  end else
+  begin
+   if ship.RotationAngle < 0 then Ship.RotationAngle:=Ship.RotationAngle+1;
   end;
 
   if IsKeyDown(Key_D) then //Right
   begin
     Vector3Set(@Ship.Axis, Ship.Axis.x,Ship.Axis.y+1 , 0);
+  //  Ship.Axis:=Vector3Create(Ship.Axis.x ,Ship.Axis.y+1 ,0);
+   if Ship.RotationAngle < 10 then
+    Ship.RotationAngle:=Ship.RotationAngle+1;
+  end else
+  begin
+   if ship.RotationAngle > 0 then Ship.RotationAngle:=Ship.RotationAngle-1;
   end;
+
 
     if IsKeyDown(Key_S) then //Right
   begin
@@ -86,9 +102,25 @@ begin
 
 
     Ship.Direction:= Ship.Axis.y+90;
-    Ship.Rotation:=Ship.Axis.x+90;
- //   ship.RotationAngle:=ship.Rotation-180;
-    Engine.EngineCamera.target:=Ship.Position;
+    Ship.Rotation:=  Ship.Axis.x+90;
+
+   // Engine.EngineCamera.target:=Ship.Position;
+    Engine.EngineTpCamera.CameraPosition:=Ship.Position;
+  //  Engine.EngineTpCamera.ViewForward:=Vector3Create(Ship.Axis.x+90,Ship.Axis.Y+90,0);
+  //   Engine.EngineTpCamera.ViewAngles:=Vector2Create(2,45);
+  //  Engine.EngineTpCamera.ViewAngles:=Vector2Create(Ship.Axis.y,0);
+
+ { Engine.EngineTpCamera.ControlsKeys[0]:=0;
+  Engine.EngineTpCamera.ControlsKeys[1]:=0;
+  Engine.EngineTpCamera.ControlsKeys[2]:=0;
+  Engine.EngineTpCamera.ControlsKeys[3]:=0;
+  Engine.EngineTpCamera.ControlsKeys[4]:=0;
+  Engine.EngineTpCamera.ControlsKeys[5]:=0;
+  Engine.EngineTpCamera.ControlsKeys[6]:=0;
+  Engine.EngineTpCamera.ControlsKeys[7]:=0;
+  Engine.EngineTpCamera.ControlsKeys[8]:=0;
+  Engine.EngineTpCamera.ControlsKeys[9]:=0;
+  Engine.EngineTpCamera.ControlsKeys[10]:=0; }
 
     Engine.Update;
 
