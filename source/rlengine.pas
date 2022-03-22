@@ -17,7 +17,7 @@ uses
 
 type
   TrlEngineDrawMode = (dmNormal, dmEx, dmWires, dmWiresEx); // draw model mode
-  TrlEngineCameraMode = (cmFree, cmThirdPeson, cmFirstPeson);
+  TrlEngineCameraMode = (cmFree, cmThird, cmFirst);
   TJumpState = (jsNone, jsJumping, jsFalling); // state for jump
   TrlModelCollisionMode = (cmBBox,cmSphere);
 
@@ -702,8 +702,9 @@ begin
  EngineFpCamera.MoveSpeed.x := 5;
  EngineFpCamera.FarPlane := 5000;
 
+ self.EngineCameraMode:=cmThird;
  DrawDistance:=0.0;
- SetEngineCameraMode(cmThirdPeson); // set camera mode
+ SetEngineCameraMode(cmThird); // set camera mode
  SetDebugGrid(10,1); // set size debug grid
 end;
 
@@ -721,8 +722,8 @@ var i: integer;
 begin
  case FEngineCameraMode of
    cmFree: rlFreeCameraUpdate(@EngineFreeCamera);
-   cmThirdPeson: rlTPCameraUpdate(@EngineFreeCamera);
-   cmFirstPeson: rlFPCameraUpdate(@EngineFreeCamera);
+   cmThird: rlTPCameraUpdate(@EngineTPCamera);
+   cmFirst: rlFPCameraUpdate(@EngineFPCamera);
  end;
 
  for i := 0 to FList.Count - 1 do  // update all model and animation
@@ -740,12 +741,12 @@ begin
        rlFreeCameraBeginMode3D(@EngineFreeCamera);
        CamPos:=EngineFreeCamera.Position;
      end;
-   cmThirdPeson:
+   cmThird:
      begin
        rlTPCameraBeginMode3D(@EngineTPCamera);
        CamPos:=EngineTPCamera.CameraPosition;
      end;
-   cmFirstPeson:
+   cmFirst:
      begin
        rlFPCameraBeginMode3D(@EngineFPCamera);
        CamPos:=EngineFPCamera.CameraPosition;
@@ -765,8 +766,8 @@ begin
 
  case FEngineCameraMode of
    cmFree: rlFreeCameraEndMode3D;
-   cmThirdPeson: rlTPCameraEndMode3D;
-   cmFirstPeson: rlFPCameraEndMode3D
+   cmThird: rlTPCameraEndMode3D;
+   cmFirst: rlFPCameraEndMode3D
  end;
 end;
 

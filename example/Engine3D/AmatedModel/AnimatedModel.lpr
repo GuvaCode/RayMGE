@@ -1,7 +1,7 @@
-program Ships;
+program AnimatedModel;
 
 uses
-    SysUtils, mUnit;
+    SysUtils, gameunit;
 
 
 var Game: TGame;
