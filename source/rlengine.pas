@@ -174,7 +174,6 @@ type
   end;
 
   { TJumperSprite }
-
   TrlJumperModel = class(TrlPlayerModel)
      private
          FJumpCount: Integer;
@@ -240,7 +239,6 @@ for i := 0 to 360 do
 end;
 
 { TrlJumperModel }
-
 procedure TrlJumperModel.SetJumpState(Value: TJumpState);
 begin
    if FJumpState <> Value then
@@ -258,12 +256,11 @@ end;
 
 constructor TrlJumperModel.Create(Engine: TrlEngine);
 begin
-  //inherited Create(Engine);
   inherited;
      FVelocity.X := 0;
      FVelocity.Y := 0;
      MaxSpeed := FMaxSpeed;
-     FDirection := 0;//(0,0,0);
+     FDirection := 0;
      FJumpState := jsNone;
      FJumpSpeed := 0.25;
      FJumpHeight := 5;
@@ -301,7 +298,6 @@ begin
                   FVelocity.Y := FMaxFallSpeed;
           end;
      end;
-
      DoJump := False;
 end;
 
@@ -337,7 +333,6 @@ begin
   FVelocity.x := m_Cos(Trunc(FDirection)) * Speed;
   FVelocity.z := m_Sin(Trunc(FDirection)) * Speed;
   FVelocity.y := sin(DEG2RAD * -FRotation) * Speed ;
- // FVelocity.y := m_Sin(Trunc(FDirection.y)) * Speed;
 end;
 
 procedure TrlPlayerModel.SetDirection(AValue: Single);
@@ -346,7 +341,6 @@ begin
   FVelocity.x := m_Cos(Trunc(FDirection)) * Speed;
   FVelocity.z := m_Sin(Trunc(FDirection)) * Speed;
   FVelocity.y := sin(DEG2RAD * -FRotation) * Speed ;
-  // FVelocity.y := m_Sin(Trunc(FDirection.y)) * Speed;
 end;
 
 procedure TrlPlayerModel.SetRotation(AValue: Single);
@@ -359,7 +353,7 @@ constructor TrlPlayerModel.Create(Engine: TrlEngine);
 begin
   inherited Create(Engine);
   FVelocity:=Vector3Create(0,0,0);
-  Direction:=0;//(0,0,0);
+  Direction:=0;
   Acceleration:=0;
   Decceleration:=0;
   Speed:=0;
@@ -566,7 +560,6 @@ begin
   CollisionMode:=cmBBox;
   CollisionRadius:=1;
   Collisioned:=false;
-
 end;
 
 destructor TrlModel.Destroy;
@@ -597,7 +590,6 @@ begin
      FCollisionBBox.max:=Vector3Add(FCollisionBBox.max,FPosition);
    end;
    { #todo 2 -oguvacode -cCollison : Add ray collision for First Person }
-
 end;
 
 procedure TrlModel.Render;
@@ -628,7 +620,6 @@ end;
 procedure TrlModel.LoadModel(FileName: String);
 begin  //todo model exists
   FModel:=raylib.LoadModel(PChar(FileName));
-
 end;
 
 procedure TrlModel.LoadModelTexture(TextureFileName: String;
@@ -664,7 +655,6 @@ begin
        DoCollision(OtherModel);
        OtherModel.DoCollision(Self);
      end;
-
 end;
 
 procedure TrlModel.Collision;
@@ -679,8 +669,7 @@ end;
 { TrlEngine }
 procedure TrlEngine.SetEngineCameraMode(AValue: TrlEngineCameraMode);
 begin
-  FEngineCameraMode:=AValue;   // set camera mode CAMERA_CUSTOM or CAMERA_FREE and etc..
-  //SetCameraMode(EngineCamera, FEngineCameraMode);
+  FEngineCameraMode:=AValue;   // set camera mode CAMERA_TP or CAMERA_FREE and etc..
 end;
 
 procedure TrlEngine.SetDrawDebugGrid(AValue: boolean);
@@ -712,7 +701,6 @@ begin
  EngineFpCamera.MoveSpeed.z := 10;
  EngineFpCamera.MoveSpeed.x := 5;
  EngineFpCamera.FarPlane := 5000;
-
 
  DrawDistance:=0.0;
  SetEngineCameraMode(cmThirdPeson); // set camera mode
